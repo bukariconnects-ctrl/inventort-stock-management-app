@@ -1,4 +1,4 @@
-# inventory_app
+# inventory_app stock managemnt
 
 A new Flutter project.
 
