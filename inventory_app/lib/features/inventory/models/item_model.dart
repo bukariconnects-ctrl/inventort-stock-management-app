@@ -2,17 +2,17 @@
 class ItemModel {
   final int? id;
   final String name;
-  final String specification;
   final String unit;
-  final int defaultMinThreshold;
+  final int bottlesPerPackage;
+  final String bottleVolume;
   final DateTime createdAt;
 
   ItemModel({
     this.id,
     required this.name,
-    required this.specification,
     this.unit = 'كرتون',
-    this.defaultMinThreshold = 100,
+    this.bottlesPerPackage = 20,
+    this.bottleVolume = '75 مل',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -20,9 +20,9 @@ class ItemModel {
     return {
       if (id != null) 'id': id,
       'name': name,
-      'specification': specification,
       'unit': unit,
-      'default_min_threshold': defaultMinThreshold,
+      'bottles_per_package': bottlesPerPackage,
+      'bottle_volume': bottleVolume,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -31,10 +31,9 @@ class ItemModel {
     return ItemModel(
       id: map['id'] as int?,
       name: map['name'] as String,
-      specification: map['specification'] as String? ?? '20 قنينة × 750 مل',
       unit: map['unit'] as String? ?? 'كرتون',
-      defaultMinThreshold:
-          (map['default_min_threshold'] as num?)?.toInt() ?? 100,
+      bottlesPerPackage: (map['bottles_per_package'] as num?)?.toInt() ?? 20,
+      bottleVolume: map['bottle_volume'] as String? ?? '75 مل',
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -44,18 +43,19 @@ class ItemModel {
   ItemModel copyWith({
     int? id,
     String? name,
-    String? specification,
     String? unit,
-    int? defaultMinThreshold,
+    int? bottlesPerPackage,
+    String? bottleVolume,
     DateTime? createdAt,
   }) {
     return ItemModel(
       id: id ?? this.id,
       name: name ?? this.name,
-      specification: specification ?? this.specification,
       unit: unit ?? this.unit,
-      defaultMinThreshold: defaultMinThreshold ?? this.defaultMinThreshold,
+      bottlesPerPackage: bottlesPerPackage ?? this.bottlesPerPackage,
+      bottleVolume: bottleVolume ?? this.bottleVolume,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 }
+

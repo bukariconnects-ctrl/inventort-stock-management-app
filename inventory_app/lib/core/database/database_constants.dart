@@ -1,4 +1,4 @@
-/// ثوابت وهيكل قاعدة بيانات SQLite المحلية لنظام مياه رواء
+/// ثوابت وهيكل قاعدة بيانات SQLite المحلية لنظام مياه رواء (Rawaa WMS)
 class DatabaseConstants {
   DatabaseConstants._();
 
@@ -8,55 +8,54 @@ class DatabaseConstants {
   // أسماء الجداول
   static const String tableWarehouses = 'warehouses';
   static const String tableItems = 'items';
-  static const String tableInventory = 'warehouse_inventory';
+  static const String tableWarehouseStocks = 'warehouse_stocks';
   static const String tableTransactions = 'transactions';
   static const String tableStocktakes = 'stocktakes';
 
-  // حقول جدول المخازن (warehouses)
+  // حقول جدول المستودعات (warehouses)
   static const String colWarehouseId = 'id';
   static const String colWarehouseName = 'name';
   static const String colWarehouseLocation = 'location';
-  static const String colWarehouseCapacity = 'capacity_boxes';
-  static const String colWarehouseIsActive = 'is_active';
+  static const String colWarehouseCode = 'code';
+  static const String colWarehouseMinAlertThreshold = 'min_alert_threshold';
   static const String colWarehouseCreatedAt = 'created_at';
 
   // حقول جدول الأصناف (items)
   static const String colItemId = 'id';
   static const String colItemName = 'name';
-  static const String colItemSpecification = 'specification';
   static const String colItemUnit = 'unit';
-  static const String colItemDefaultMinThreshold = 'default_min_threshold';
+  static const String colItemBottlesPerPackage = 'bottles_per_package';
+  static const String colItemBottleVolume = 'bottle_volume';
+  static const String colItemCreatedAt = 'created_at';
 
-  // حقول جدول أرصدة المخازن (warehouse_inventory)
-  static const String colInvId = 'id';
-  static const String colInvWarehouseId = 'warehouse_id';
-  static const String colInvItemId = 'item_id';
-  static const String colInvCurrentStock = 'current_stock';
-  static const String colInvMinThreshold = 'min_threshold';
-  static const String colInvUpdatedAt = 'updated_at';
+  // حقول جدول أرصدة المخازن (warehouse_stocks)
+  static const String colStockId = 'id';
+  static const String colStockWarehouseId = 'warehouse_id';
+  static const String colStockItemId = 'item_id';
+  static const String colStockQuantity = 'quantity';
+  static const String colStockLastUpdated = 'last_updated';
 
-  // حقول جدول الحركات والسندات (transactions)
+  // حقول جدول حركات المخزون والسندات (transactions)
   static const String colTxId = 'id';
-  static const String colTxNumber = 'transaction_number';
-  static const String colTxType = 'type'; // receipt, issue, damage, stocktake
+  static const String colTxVoucherNumber = 'voucher_number';
+  static const String colTxType = 'type'; // receipt, issue, damage
   static const String colTxWarehouseId = 'warehouse_id';
   static const String colTxItemId = 'item_id';
   static const String colTxQuantity = 'quantity';
-  static const String colTxPartyName =
-      'party_name'; // اسم الموزع / المندوب / الوجبة
-  static const String colTxReference =
-      'reference_note'; // ملاحظات / رقم سيارة / سبب إتلاف
-  static const String colTxDate = 'transaction_date';
+  static const String colTxRelatedPerson = 'related_person';
+  static const String colTxReferenceNumber = 'reference_number';
+  static const String colTxNotes = 'notes';
+  static const String colTxDamageReason = 'damage_reason';
   static const String colTxCreatedAt = 'created_at';
 
   // حقول جدول الجرد والتسوية (stocktakes)
   static const String colStId = 'id';
-  static const String colStNumber = 'stocktake_number';
+  static const String colStCode = 'code';
   static const String colStWarehouseId = 'warehouse_id';
   static const String colStItemId = 'item_id';
-  static const String colStBookQuantity = 'book_quantity';
+  static const String colStSystemQuantity = 'system_quantity';
   static const String colStActualQuantity = 'actual_quantity';
   static const String colStDifference = 'difference';
-  static const String colStReason = 'reconciliation_reason';
-  static const String colStDate = 'stocktake_date';
+  static const String colStNotes = 'notes';
+  static const String colStCreatedAt = 'created_at';
 }

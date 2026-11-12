@@ -3,16 +3,16 @@ class WarehouseModel {
   final int? id;
   final String name;
   final String? location;
-  final int capacityBoxes;
-  final bool isActive;
+  final String code;
+  final int minAlertThreshold;
   final DateTime createdAt;
 
   WarehouseModel({
     this.id,
     required this.name,
     this.location,
-    this.capacityBoxes = 5000,
-    this.isActive = true,
+    required this.code,
+    this.minAlertThreshold = 100,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -21,8 +21,8 @@ class WarehouseModel {
       if (id != null) 'id': id,
       'name': name,
       'location': location,
-      'capacity_boxes': capacityBoxes,
-      'is_active': isActive ? 1 : 0,
+      'code': code,
+      'min_alert_threshold': minAlertThreshold,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -32,8 +32,8 @@ class WarehouseModel {
       id: map['id'] as int?,
       name: map['name'] as String,
       location: map['location'] as String?,
-      capacityBoxes: (map['capacity_boxes'] as num?)?.toInt() ?? 5000,
-      isActive: (map['is_active'] as int?) == 1,
+      code: map['code'] as String,
+      minAlertThreshold: (map['min_alert_threshold'] as num?)?.toInt() ?? 100,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -44,16 +44,16 @@ class WarehouseModel {
     int? id,
     String? name,
     String? location,
-    int? capacityBoxes,
-    bool? isActive,
+    String? code,
+    int? minAlertThreshold,
     DateTime? createdAt,
   }) {
     return WarehouseModel(
       id: id ?? this.id,
       name: name ?? this.name,
       location: location ?? this.location,
-      capacityBoxes: capacityBoxes ?? this.capacityBoxes,
-      isActive: isActive ?? this.isActive,
+      code: code ?? this.code,
+      minAlertThreshold: minAlertThreshold ?? this.minAlertThreshold,
       createdAt: createdAt ?? this.createdAt,
     );
   }

@@ -4,96 +4,89 @@
 ---
 
 ### الحالة الحالية للنظام (Current Status)
-* **المرحلة المكتملة:** المرحلة 1 - التهيئة المعمارية وإعداد بنية المشروع (Phase 1: Project Initialization & Architecture Setup).
-* **حالة النظام:** مكتمل وجاهز 100% بدون أي أخطاء برمجية (`No issues found`).
-* **البيئة المعتمدة:** Flutter (Dart SDK ^3.8.0) مع نمط العمل المحلي المستقل دون اتصال (Offline-First SQLite).
+* **المرحلة المكتملة:** المرحلة 2 - تصميم وبناء طبقة قاعدة البيانات المحلية SQLite والعمليات الذرية (Phase 2: SQLite Database Layer & Atomic Models).
+* **حالة النظام:** مكتمل وجاهز 100% بدون أي أخطاء أو تحذيرات برمجية (`No issues found`).
+* **الاختبارات الآلية:** اجتياز جميع اختبارات الوحدة والاختبارات التوافقية بنجاح (`9 of 9 passed`).
+* **البيئة المعتمدة:** Flutter (Dart SDK ^3.8.0) مع محرك `sqflite` ونمط العمل المستقل بدون إنترنت (Offline-First).
 
 ---
 
-### 1. الحزم والمكتبات المضافة (Dependencies Added)
+### 1. ملخص إنجازات المرحلة 2 (Phase 2 Highlights)
 
-تم تثبيت وتفعيل الحزم التالية في `pubspec.yaml`:
-| الحزمة (Package) | الإصدار (Version) | الغرض والاستخدام في نظام رواء |
-| :--- | :--- | :--- |
-| `sqflite` | `^2.4.1` | المحرك المحلي لإدارة قاعدة بيانات SQLite للعمل بدون إنترنت |
-| `path` | `^1.9.0` | التعامل الآمن مع مسارات ملفات قاعدة البيانات عبر المنصات |
-| `provider` | `^6.1.2` | إدارة الحالة (State Management) والربط بين واجهات المستخدم ونماذج البيانات |
-| `intl` | `^0.20.2` | التوطين العربي، تنسيق التواريخ، الأوقات، وفواصل الأرقام والكميات |
-| `pdf` | `^3.11.1` | بناء مستندات وقوالب سندات الاستلام، الصرف، والإتلاف بصيغة PDF باللغة العربية |
-| `printing` | `^5.13.2` | معاينة السندات وطباعتها مباشرة عبر الطابعات اللاسلكية والمحلية |
-| `share_plus` | `^10.1.4` | مشاركة ملفات السندات PDF وملفات النسخ الاحتياطي عبر تطبيقات المراسلة |
-| `file_picker` | `^8.1.7` | اختيار وتحديد ملف النسخة الاحتياطية عند الاسترجاع |
-| `flutter_localizations` | `SDK` | دعم الواجهات العربية وإلزام المحاذاة والاتجاه من اليمين إلى اليسار (RTL) |
-| `google_fonts` | `^6.2.1` | تطبيق الخط العربي الرسمي والمناسب للمستودعات (Cairo Font) |
-
----
-
-### 2. هيكلية المجلدات المعتمدة (Clean Folder Architecture)
-
-تم تأسيس الهيكل البرمجي المعياري داخل `lib/` كالتالي:
-
-```text
-lib/
-├── main.dart                                    # نقطة انطلاق التطبيق وشاشة الترحيب والتأسيس
-├── core/                                        # النواة المشتركة لكافة موديولات النظام
-│   ├── constants/
-│   │   ├── app_colors.dart                      # لوحة ألوان قطاع المياه النظيفة وألوان الحالات
-│   │   └── app_constants.dart                   # ثوابت النظام، مسميات السندات، مواصفات الصنف الافتراضي
-│   ├── theme/
-│   │   └── app_theme.dart                       # ثيم Material 3 العصري مع خط Cairo ودعم RTL
-│   ├── utils/
-│   │   └── date_formatter.dart                  # أدوات تنسيق التاريخ والوقت والأرقام بالعربية
-│   ├── database/
-│   │   └── database_constants.dart              # ثوابت الجداول، الحقول، والمفاتيح لقاعدة SQLite
-│   └── services/
-│       ├── pdf_service.dart                     # واجهة خدمة توليد وتصدير السندات PDF
-│       └── backup_service.dart                  # واجهة خدمة النسخ الاحتياطي والاستعادة
-└── features/                                    # وحدات الوظائف التشغيلية (Feature-driven)
-    ├── warehouses/                              # إدارة المخازن المتعددة والسعات
-    │   └── warehouses_feature.dart
-    ├── inventory/                               # الأصناف وتتبع الأرصدة وتنبيهات النقص
-    │   └── inventory_feature.dart
-    ├── transactions/                            # سندات الاستلام، الصرف، والإتلاف
-    │   └── transactions_feature.dart
-    ├── stocktake/                               # الجرد الفعلي والدفتري والتسويات
-    │   └── stocktake_feature.dart
-    ├── reports/                                 # سجل الحركات الشامل والبحث والأرشيف
-    │   └── reports_feature.dart
-    └── backup/                                  # واجهات النسخ الاحتياطي والاستعادة
-        └── backup_feature.dart
-```
+#### أ. نماذج البيانات المعيارية (Domain Data Models)
+تم إنشاء كلاسات النماذج التالية داخل مجلدات الميزات المناسبة مع دوال `toMap()`, `fromMap()`, و `copyWith()`:
+1. **`WarehouseModel`** ([lib/features/warehouses/models/warehouse_model.dart](file:///d:/inventory_management_app/inventory_app/lib/features/warehouses/models/warehouse_model.dart)):
+   - الحقول: `id`, `name`, `location`, `code` (فريد), `minAlertThreshold` (الافتراضي 100 كرتون), `createdAt`.
+2. **`ItemModel`** ([lib/features/inventory/models/item_model.dart](file:///d:/inventory_management_app/inventory_app/lib/features/inventory/models/item_model.dart)):
+   - الحقول: `id`, `name`, `unit` (كرتون), `bottlesPerPackage` (20 قنينة), `bottleVolume` (75 مل), `createdAt`.
+3. **`WarehouseStockModel`** ([lib/features/inventory/models/warehouse_stock_model.dart](file:///d:/inventory_management_app/inventory_app/lib/features/inventory/models/warehouse_stock_model.dart)):
+   - يمثل رصيد كراتين المياه في كل مخزن على حدة مع حقول الربط المساعدة (JOIN) وخاصية `isLowStock` لتنبيه انخفاض الرصيد.
+4. **`StockTransactionModel`** ([lib/features/transactions/models/stock_transaction_model.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/models/stock_transaction_model.dart)):
+   - يمثل سندات الحركات الثلاث المعتمدة (استلام `receipt`، صرف `issue`، إتلاف `damage`).
+   - الحقول: `voucherNumber`, `type`, `warehouseId`, `itemId`, `quantity`, `relatedPerson`, `referenceNumber`, `notes`, `damageReason`, `createdAt`.
+5. **`StocktakeModel`** ([lib/features/stocktake/models/stocktake_model.dart](file:///d:/inventory_management_app/inventory_app/lib/features/stocktake/models/stocktake_model.dart)):
+   - يمثل جلسة الجرد والتسوية ومقارنة الرصيد الدفتري بالفعلي واحتساب الفارق `difference` وخصائص `hasDeficit` و `hasSurplus`.
 
 ---
 
-### 3. الملفات التي تم إنشاؤها وتعديلها (Created & Modified Files)
-
-1. **`system_overview.md`**: التوثيق التأسيسي الشامل للنظام، تفاصيل صنف كرتون مياه رواء (20×750 مل)، العمليات الأربع، وقرارات التصميم (Offline-First، إلغاء الباركود والمرتجعات لتبسيط الإجراءات).
-2. **`system_change_log.md`**: سجل التغييرات والتوثيق المرحلي للمرحلة 1.
-3. **`pubspec.yaml`**: تحديث الحزم البرمجية، وصف المشروع، وإعدادات الخطوط والتوطين.
-4. **`lib/main.dart`**: إعداد نقطة البدء وتفعيل دعم اللغة العربية والـ RTL وبناء شاشة ترحيبية احترافية للمستودع مع بطاقات تعريفية بالعمليات الأربع والصنف الأساسي.
-5. **`lib/core/constants/app_colors.dart`**: لوحة ألوان درجات المياه (Clean Water Blue & Cyan)، مع ألوان العمليات (أخضر للاستلام، أزرق للصرف، أحمر للإتلاف، بنفسجي للجرد، برتقالي للتنبيه).
-6. **`lib/core/constants/app_constants.dart`**: ثوابت النظام وبادئات السندات (`REC-`, `ISS-`, `DAM-`, `STK-`).
-7. **`lib/core/theme/app_theme.dart`**: تطبيق ثيم Material 3 متناسق بخط Cairo ومناسب لقراءة أمين المخزن تحت مختلف ظروف الإضاءة.
-8. **`lib/core/utils/date_formatter.dart`**: مساعد التنسيق باللغة العربية وتخزين التواريخ بصيغة ISO في SQLite.
-9. **`lib/core/database/database_constants.dart`**: مخطط أسماء الجداول والحقول المهيأة للمرحلة 2 (`warehouses`, `items`, `warehouse_inventory`, `transactions`, `stocktakes`).
-10. **`lib/core/services/pdf_service.dart`**: واجهة خدمة إنشاء وطباعة ومشاركة السندات.
-11. **`lib/core/services/backup_service.dart`**: واجهة خدمة النسخ الاحتياطي والاسترجاع المحلي.
-12. **`lib/features/*`**: ملفات تعريف الوحدات والوحدات الوظيفية الست.
-13. **`test/widget_test.dart`**: تحديث اختبار التحقق المبدئي ليتوافق مع `RawaaWmsApp`.
+#### ب. مخطط قاعدة البيانات المحلية SQLite (Database Schema)
+تم بناء الجداول والعلاقات داخل [lib/core/database/database_helper.dart](file:///d:/inventory_management_app/inventory_app/lib/core/database/database_helper.dart) مع تفعيل القيود المرجعية `PRAGMA foreign_keys = ON;`:
+1. **`warehouses`**: جدول المستودعات وأكوادها وحدود التنبيه.
+2. **`items`**: جدول الأصناف ومواصفات العبوات.
+3. **`warehouse_stocks`**: جدول أرصدة المستودعات مع قيد فريد مركب `UNIQUE(warehouse_id, item_id)`.
+4. **`transactions`**: جدول السندات والأرشيف مع فهارس سريعة على `warehouse_id`, `type`, و `created_at`.
+5. **`stocktakes`**: جدول جلسات الجرد والتسويات الدورية.
 
 ---
 
-### 4. التحقق واختبار البناء (Verification & Build Check)
-* تنفيذ أمر `flutter pub get`: **ناجح بنسبة 100%** وتم تنزيل وحل كافة الحزم التابعة دون أي تعارضات.
-* توافق الهيكلية مع معايير Flutter النظيفة.
+#### ج. حقن البيانات الافتراضية (Seed Data)
+عند إنشاء قاعدة البيانات لأول مرة، يتم تلقائياً:
+1. إدراج الصنف الافتراضي: **"كرتون مياه رواء - 20 علبة × 75 مل"** (20 قنينة، سعة 75 مل).
+2. إدراج المخزنين الافتراضيين:
+   - **المخزن الرئيسي (المصنع):** الكود `WH-01`، حد التنبيه: 500 كرتون.
+   - **مخزن التوزيع الخارجي:** الكود `WH-02`، حد التنبيه: 200 كرتون.
+3. تهيئة سجلات الأرصدة للمخزنين في `warehouse_stocks` برصيد ابتدائي (0).
 
 ---
 
-### 5. الجاهزية للمرحلة التالية (Next Stage Readiness)
-* **المرحلة 2 القادمة:** **تصميم طبقة قاعدة البيانات المحلية (Local SQLite Layer via Sqflite)**.
+#### د. العمليات الحسابية الذرية (Atomic Business Transactions)
+تم تنفيذ المعاملات باستخدام `db.transaction()` لضمان الاتساق الذري الكامل ومنع تضارب البيانات:
+1. **`insertReceiptTransaction`**: حفظ سند الاستلام وزيادة رصيد كراتين المياه في المخزن ذرياً.
+2. **`insertIssueTransaction`**: فحص الرصيد المتوفر، ومنع الصرف في حال عدم الكفاية عبر استثناء `InsufficientStockException`، ثم خصم الرصيد وحفظ السند ذرياً لمنع الأرصدة السالبة تماماً.
+3. **`insertDamageTransaction`**: فحص وتوثيق حالات الإتلاف والهدر وخصم الكمية من المخزن مع توثيق السبب المباشر.
+4. **`executeStocktakeReconciliation`**: حفظ نتيجة الجرد، وضبط رصيد المخزن في `warehouse_stocks` ليصبح مساوياً تماماً للكمية الفعلية المحصورة.
+
+---
+
+#### هـ. دوال الاستعلام والفلترة وتوليد السندات
+* **`getAllWarehousesWithStock`**: جلب كافة المخازن مع أرصدتها وحالة تنبيه انخفاض المخزون `isLowStock`.
+* **`getTransactions`**: استعلام أرشيف الحركات مع دعم الفلترة بواسطة: المخزن، نوع السند، وتاريخ البداية والنهاية.
+* **`generateNextVoucherNumber`**: توليد تسلسلي تلقائي شهري لأرقام السندات (مثل: `REC-202611-0001`، `ISS-202611-0001`، `DAM-202611-0001`، `STK-202611-0001`).
+
+---
+
+### 2. الاختبارات والتحقق البرمجي (Verification & Tests)
+* تم إنشاء ملف اختبارات شامل في [test/database_test.dart](file:///d:/inventory_management_app/inventory_app/test/database_test.dart) للتحقق من:
+  1. سلامة التهيئة وحقن البيانات المبدئية.
+  2. صحة زيادة الرصيد في سند الاستلام.
+  3. صحة خصم الرصيد في سند الصرف.
+  4. التحقق الصارم من منع الأرصدة السالبة ورمي `InsufficientStockException`.
+  5. صحة سند الإتلاف وخصم التالف.
+  6. صحة تسوية الجرد الفعلي ومطابقة الرصيد.
+  7. دقة توليد أرقام السندات التسلسلية.
+  8. اختبار استعلام مؤشرات وتنبيهات انخفاض المخزون.
+* نتيجة الفحص البرمجي:
+  ```text
+  flutter analyze -> No issues found!
+  flutter test -> 00:02 +9: All tests passed!
+  ```
+
+---
+
+### 3. الجاهزية للمرحلة التالية (Next Stage Readiness)
+* **المرحلة 3 القادمة:** **واجهات وإدارة المخازن ورصيد المخزون (Warehouse & Inventory Management UI)**.
 * **الخطوات القادمة:**
-  1. إنشاء كلاس `DatabaseHelper` (Singleton) مع دوال الفتح والإغلاق وإدارة مسار قاعدة البيانات.
-  2. إنشاء جداول: `warehouses`، `items`، `warehouse_inventory`، `transactions`، `stocktakes`.
-  3. كتابة دوال الاستعلام والإدراج (CRUD Operations) مع دعم حركات الـ Transactions المترابطة (مثل خصم المخزون وإنشاء السند ككتلة ذرية واحدة لمنع التعارض).
-  4. تهيئة البيانات الأولية التلقائية (Default Seed Data): إدراج الصنف الأساسي (كرتون مياه رواء 20×750 مل) والمخازن الافتراضية الأولية (المخزن الرئيسي، مخزن التوزيع).
-
+  1. بناء مزودي الحالة `WarehousesProvider` و `InventoryProvider` باستخدام مكتبة `provider`.
+  2. تصميم وتطوير واجهة الشاشة الرئيسية (Dashboard / Home View) لعرض ملخص المخازن، الأرصدة الإجمالية، والشارات التنبيهية بالألوان.
+  3. شاشة إدارة وتفاصيل المخازن وإضافة مخزن جديد مع تحديد حد التنبيه.
+  4. بطاقات كروت المخازن السريعة وتنبيهات نفاد المخزون.
