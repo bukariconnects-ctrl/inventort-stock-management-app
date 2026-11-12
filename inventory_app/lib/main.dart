@@ -1,40 +1,86 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'features/home/main_screen.dart';
+import 'features/warehouses/providers/warehouse_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const RawaaWmsApp());
+  runApp(const RawaaWmsApp(autoNavigateSplash: true));
 }
 
 /// التطبيق الرئيسي لنظام إدارة مخازن مياه رواء
 class RawaaWmsApp extends StatelessWidget {
-  const RawaaWmsApp({super.key});
+  final bool autoNavigateSplash;
+
+  const RawaaWmsApp({super.key, this.autoNavigateSplash = false});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      // تفعيل اللغة العربية كافتراضي وإلزام الاتجاه من اليمين لليسار (RTL)
-      locale: const Locale('ar', 'SA'),
-      supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => WarehouseProvider()..loadWarehousesWithStock(),
+        ),
       ],
-      home: const SplashScreen(),
+      child: MaterialApp(
+        title: AppConstants.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        // تفعيل اللغة العربية كافتراضي وإلزام الاتجاه من اليمين لليسار (RTL)
+        locale: const Locale('ar', 'SA'),
+        supportedLocales: const [Locale('ar', 'SA'), Locale('en', 'US')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: SplashScreen(autoNavigate: autoNavigateSplash),
+      ),
     );
   }
 }
 
-/// شاشة البداية والترحيب التأسيسية
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+/// شاشة البداية والترحيب التأسيسية التي تنقل تلقائياً للوحة التحكم
+class SplashScreen extends StatefulWidget {
+  final bool autoNavigate;
+
+  const SplashScreen({super.key, this.autoNavigate = false});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  Timer? _navigationTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoNavigate) {
+      _navigationTimer = Timer(const Duration(milliseconds: 1400), () {
+        if (mounted) {
+          _navigateToMain();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _navigationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _navigateToMain() {
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,58 +218,23 @@ class SplashScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // ملخص العمليات المخزنية الأربع المعتمدة
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          'العمليات المعتمدة في النظام:',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.bold,
+                      // زر الانتقال المباشر للوحة التحكم
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToMain,
+                          icon: const Icon(Icons.dashboard_rounded),
+                          label: const Text(
+                            'الدخول إلى لوحة التحكم الرئيسية',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      const _OperationCard(
-                        icon: Icons.add_business_rounded,
-                        color: AppColors.receiptGreen,
-                        bgColor: AppColors.receiptGreenLight,
-                        title: 'سند استلام إنتاج',
-                        subtitle:
-                            'استلام دفعات الكراتين المعبأة من خط إنتاج المصنع',
-                      ),
-                      const SizedBox(height: 8),
-
-                      const _OperationCard(
-                        icon: Icons.local_shipping_rounded,
-                        color: AppColors.issueBlue,
-                        bgColor: AppColors.issueBlueLight,
-                        title: 'سند صرف للموزعين',
-                        subtitle:
-                            'صرف وتسليم كراتين المياه لسيارات المناديب والموزعين',
-                      ),
-                      const SizedBox(height: 8),
-
-                      const _OperationCard(
-                        icon: Icons.delete_sweep_rounded,
-                        color: AppColors.damageRed,
-                        bgColor: AppColors.damageRedLight,
-                        title: 'سند إتلاف وهدر',
-                        subtitle:
-                            'إثبات واستبعاد الكراتين والعبوات التالفة لمنع الهدر',
-                      ),
-                      const SizedBox(height: 8),
-
-                      const _OperationCard(
-                        icon: Icons.fact_check_rounded,
-                        color: AppColors.stocktakePurple,
-                        bgColor: AppColors.stocktakePurpleLight,
-                        title: 'جرد وتسوية دورية',
-                        subtitle:
-                            'مطابقة الرصيد الفعلي بالرصيد الدفتري وضبط الفروقات',
                       ),
                     ],
                   ),
@@ -256,7 +267,7 @@ class SplashScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'المرحلة 1: اكتمال التهيئة المعمارية',
+                          'المرحلة 3: لوحة التحكم وإدارة المخازن',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -279,71 +290,6 @@ class SplashScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// عنصر بطاقة العملية المخزنية
-class _OperationCard extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final Color bgColor;
-  final String title;
-  final String subtitle;
-
-  const _OperationCard({
-    required this.icon,
-    required this.color,
-    required this.bgColor,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: color,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

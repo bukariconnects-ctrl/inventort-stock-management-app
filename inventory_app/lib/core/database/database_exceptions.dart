@@ -18,4 +18,3 @@ class InsufficientStockException implements Exception {
     return message;
   }
 }
-
