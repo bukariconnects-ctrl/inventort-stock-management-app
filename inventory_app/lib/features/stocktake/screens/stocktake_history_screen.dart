@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/pdf_service.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../models/stocktake_model.dart';
 import '../providers/stocktake_provider.dart';
@@ -347,21 +348,80 @@ class _StocktakeHistoryScreenState extends State<StocktakeHistoryScreen> {
             const SizedBox(height: 6),
           ],
 
-          // تاريخ ووقت الجرد
+          // تذييل الكرت: تاريخ الجرد وأزرار تصدير وطباعة الـ PDF
+          const Divider(height: 18, color: AppColors.divider),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(
-                Icons.schedule_rounded,
-                size: 13,
-                color: AppColors.textMuted,
+              Row(
+                children: [
+                  const Icon(
+                    Icons.schedule_rounded,
+                    size: 13,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'تاريخ الجرد: $formattedDate',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Text(
-                'تاريخ الجرد: $formattedDate',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.print_rounded, size: 20),
+                    color: AppColors.stocktakePurple,
+                    tooltip: 'طباعة محضر الجرد (PDF)',
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () async {
+                      try {
+                        await PdfService.printStocktake(stocktake);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'تعذر فتح الطباعة: $e',
+                                style: const TextStyle(fontFamily: 'Cairo'),
+                              ),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    color: AppColors.stocktakePurple,
+                    tooltip: 'مشاركة محضر الجرد',
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () async {
+                      try {
+                        await PdfService.shareStocktake(stocktake);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'تعذر مشاركة المحضر: $e',
+                                style: const TextStyle(fontFamily: 'Cairo'),
+                              ),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),

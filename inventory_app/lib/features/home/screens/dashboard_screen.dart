@@ -4,12 +4,16 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../inventory/models/warehouse_stock_model.dart';
+import '../../reports/providers/reports_provider.dart';
+import '../../reports/screens/transactions_history_screen.dart';
+import '../../transactions/models/stock_transaction_model.dart';
 import '../../transactions/screens/new_damage_screen.dart';
 import '../../transactions/screens/new_issue_screen.dart';
 import '../../transactions/screens/new_receipt_screen.dart';
+import '../../transactions/screens/voucher_details_screen.dart';
 import '../../warehouses/providers/warehouse_provider.dart';
 
-/// شاشة لوحة التحكم الرئيسية (Dashboard Screen)
+/// شاشة لوحة التحكم الرئيسية المحدثة (Interactive Dashboard Screen)
 class DashboardScreen extends StatelessWidget {
   final VoidCallback? onNavigateToWarehouses;
   final VoidCallback? onNavigateToOperations;
@@ -23,6 +27,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final reportsProvider = Provider.of<ReportsProvider?>(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -34,6 +39,7 @@ class DashboardScreen extends StatelessWidget {
             tooltip: 'تحديث البيانات',
             onPressed: () {
               context.read<WarehouseProvider>().loadWarehousesWithStock();
+              reportsProvider?.loadTransactions();
             },
           ),
         ],
@@ -85,7 +91,12 @@ class DashboardScreen extends StatelessWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.loadWarehousesWithStock(),
+            onRefresh: () async {
+              await Future.wait([
+                provider.loadWarehousesWithStock(),
+                if (reportsProvider != null) reportsProvider.loadTransactions(),
+              ]);
+            },
             color: AppColors.primary,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -99,17 +110,29 @@ class DashboardScreen extends StatelessWidget {
                 _buildHeroTotalStockCard(context, provider.totalStockCount),
                 const SizedBox(height: 16),
 
-                // 3. شريط التنبيه البارز لمخازن الرصيد المنخفض
+                // 3. نشاط وحركة اليوم اللحظية (وارد اليوم | منصرف اليوم | تالف اليوم)
+                if (reportsProvider != null) ...[
+                  _buildTodayActivitySection(context, reportsProvider),
+                  const SizedBox(height: 16),
+                ],
+
+                // 4. شريط التنبيه البارز لمخازن الرصيد المنخفض
                 if (provider.hasLowStockAlert) ...[
                   _buildAlertBanner(context, provider.lowStockWarehouses),
                   const SizedBox(height: 16),
                 ],
 
-                // 4. أزرار الإجراءات السريعة
+                // 5. أزرار الإجراءات السريعة
                 _buildQuickActions(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // 5. قسم أرصدة المخازن الحالية
+                // 6. قسم آخر الحركات المنفذة
+                if (reportsProvider != null) ...[
+                  _buildRecentTransactionsSection(context, reportsProvider),
+                  const SizedBox(height: 24),
+                ],
+
+                // 7. قسم أرصدة المخازن الحالية
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -362,7 +385,116 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// 3. شريط التنبيه البارز لمخازن الرصيد المنخفض
+  /// 3. نشاط وحركة اليوم
+  Widget _buildTodayActivitySection(
+    BuildContext context,
+    ReportsProvider reportsProvider,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.trending_up_rounded, size: 18, color: AppColors.primary),
+            SizedBox(width: 6),
+            Text(
+              'حركات اليوم اللحظية',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTodayStatItem(
+                title: 'وارد اليوم',
+                cartons: reportsProvider.todayReceived,
+                color: AppColors.receiptGreen,
+                bgColor: AppColors.receiptGreenLight,
+                sign: '+',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTodayStatItem(
+                title: 'منصرف اليوم',
+                cartons: reportsProvider.todayIssued,
+                color: AppColors.issueBlue,
+                bgColor: AppColors.issueBlueLight,
+                sign: '-',
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTodayStatItem(
+                title: 'تالف اليوم',
+                cartons: reportsProvider.todayDamaged,
+                color: AppColors.damageRed,
+                bgColor: AppColors.damageRedLight,
+                sign: '-',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTodayStatItem({
+    required String title,
+    required int cartons,
+    required Color color,
+    required Color bgColor,
+    required String sign,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withAlpha(60), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: color.withAlpha(8),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$sign${DateFormatter.formatNumber(cartons)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const Text(
+            'كرتون',
+            style: TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 4. شريط التنبيه البارز لمخازن الرصيد المنخفض
   Widget _buildAlertBanner(
     BuildContext context,
     List<WarehouseStockModel> lowStockList,
@@ -447,7 +579,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// 4. أزرار الإجراءات السريعة
+  /// 5. أزرار الإجراءات السريعة
   Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,7 +694,187 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// 5. كرت رصيد المخزن
+  /// 6. قسم آخر الحركات المنفذة
+  Widget _buildRecentTransactionsSection(
+    BuildContext context,
+    ReportsProvider reportsProvider,
+  ) {
+    final recents = reportsProvider.recentTransactions(3);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.history_rounded, size: 18, color: AppColors.primary),
+                SizedBox(width: 6),
+                Text(
+                  'آخر الحركات المنفذة',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TransactionsHistoryScreen(),
+                  ),
+                );
+              },
+              child: const Row(
+                children: [
+                  Text(
+                    'عرض الكل',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (recents.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: const Center(
+              child: Text(
+                'لا توجد حركات مخزنية مسجلة حتى الآن.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+          )
+        else
+          ...recents.map((tx) => _buildRecentTxItem(context, tx)),
+      ],
+    );
+  }
+
+  Widget _buildRecentTxItem(BuildContext context, StockTransactionModel tx) {
+    Color color;
+    Color bgColor;
+    String sign;
+    IconData icon;
+
+    switch (tx.type) {
+      case 'receipt':
+        color = AppColors.receiptGreen;
+        bgColor = AppColors.receiptGreenLight;
+        sign = '+';
+        icon = Icons.add_business_rounded;
+        break;
+      case 'issue':
+        color = AppColors.issueBlue;
+        bgColor = AppColors.issueBlueLight;
+        sign = '-';
+        icon = Icons.local_shipping_rounded;
+        break;
+      case 'damage':
+        color = AppColors.damageRed;
+        bgColor = AppColors.damageRedLight;
+        sign = '-';
+        icon = Icons.delete_sweep_rounded;
+        break;
+      default:
+        color = AppColors.primary;
+        bgColor = AppColors.primaryLight.withAlpha(30);
+        sign = '';
+        icon = Icons.receipt_rounded;
+    }
+
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VoucherDetailsScreen(transaction: tx),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.voucherNumber,
+                    style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${tx.relatedPerson} • ${tx.warehouseName ?? "مستودع"}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$sign${DateFormatter.formatNumber(tx.quantity)} كرتون',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  DateFormatter.formatDate(tx.createdAt),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 7. كرت رصيد المخزن
   Widget _buildWarehouseStockCard(
     BuildContext context,
     WarehouseStockModel stock,

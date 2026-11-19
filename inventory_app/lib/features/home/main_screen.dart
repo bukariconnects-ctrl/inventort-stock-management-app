@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../reports/screens/reports_screen.dart';
 import '../transactions/screens/operations_screen.dart';
 import '../warehouses/screens/warehouses_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -30,7 +31,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       const WarehousesScreen(),
       const OperationsScreen(),
-      _buildReportsPlaceholder(),
+      const ReportsScreen(),
     ];
 
     return Scaffold(
@@ -90,60 +91,6 @@ class _MainScreenState extends State<MainScreen> {
               label: 'التقارير والسجل',
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReportsPlaceholder() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('التقارير وأرشيف الحركات')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.accentCyan.withAlpha(30),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.bar_chart_rounded,
-                  size: 64,
-                  color: AppColors.accentCyan,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'أرشيف الحركات والتقارير المخزنية',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'جاهز لاستقبال فلاتر البحث، تقارير الوارد والمنصرف، وتصدير مستندات PDF في المراحل القادمة.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _onTabSelected(0),
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('العودة إلى لوحة التحكم'),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/main_screen.dart';
+import 'features/reports/providers/reports_provider.dart';
 import 'features/stocktake/providers/stocktake_provider.dart';
 import 'features/transactions/providers/transaction_provider.dart';
 import 'features/warehouses/providers/warehouse_provider.dart';
@@ -30,6 +31,9 @@ class RawaaWmsApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => StocktakeProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ReportsProvider()..loadTransactions(),
+        ),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
@@ -273,7 +277,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
-                              'المرحلة 5: الجرد والتسوية المخزنية',
+                              'المرحلة 7: سجل الحركات والتقارير الرقابية',
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,

@@ -1,13 +1,68 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/pdf_service.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../models/stock_transaction_model.dart';
 
-/// شاشة عرض تفاصيل السند المخزني المنفذ (Voucher Details Screen)
-class VoucherDetailsScreen extends StatelessWidget {
+/// شاشة عرض تفاصيل السند المخزني المنفذ مع الطباعة والمشاركة (Voucher Details Screen)
+class VoucherDetailsScreen extends StatefulWidget {
   final StockTransactionModel transaction;
 
   const VoucherDetailsScreen({super.key, required this.transaction});
+
+  @override
+  State<VoucherDetailsScreen> createState() => _VoucherDetailsScreenState();
+}
+
+class _VoucherDetailsScreenState extends State<VoucherDetailsScreen> {
+  bool _isPrinting = false;
+  bool _isSharing = false;
+
+  Future<void> _handlePrint() async {
+    setState(() => _isPrinting = true);
+    try {
+      await PdfService.printVoucher(widget.transaction);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تعذر فتح عارض الطباعة: $e',
+              style: const TextStyle(fontFamily: 'Cairo'),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPrinting = false);
+      }
+    }
+  }
+
+  Future<void> _handleShare() async {
+    setState(() => _isSharing = true);
+    try {
+      await PdfService.shareVoucher(widget.transaction);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'تعذر مشاركة السند: $e',
+              style: const TextStyle(fontFamily: 'Cairo'),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +71,7 @@ class VoucherDetailsScreen extends StatelessWidget {
     IconData typeIcon;
     String typeTitle;
 
-    switch (transaction.type) {
+    switch (widget.transaction.type) {
       case 'receipt':
         typeColor = AppColors.receiptGreen;
         typeBgColor = AppColors.receiptGreenLight;
@@ -42,240 +97,308 @@ class VoucherDetailsScreen extends StatelessWidget {
         typeTitle = 'سند حركة مخزنية';
     }
 
-    final formattedDate = DateFormatter.formatDateTime(transaction.createdAt);
+    final formattedDate = DateFormatter.formatDateTime(
+      widget.transaction.createdAt,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(typeTitle),
+        backgroundColor: typeColor,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () =>
               Navigator.of(context).popUntil((route) => route.isFirst),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded),
+            tooltip: 'مشاركة السند كـ PDF',
+            onPressed: (_isPrinting || _isSharing) ? null : _handleShare,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          children: [
-            // بطاقة السند الرسمية
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.divider),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(10),
-                    blurRadius: 14,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // شارة ورأس السند
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: typeBgColor,
-                      shape: BoxShape.circle,
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            children: [
+              // بطاقة السند الرسمية
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.divider),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
                     ),
-                    child: Icon(typeIcon, size: 36, color: typeColor),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    typeTitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: typeColor,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // شارة ورأس السند
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: typeBgColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(typeIcon, size: 36, color: typeColor),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Text(
-                      transaction.voucherNumber,
-                      style: const TextStyle(
-                        fontFamily: 'Cairo',
+                    const SizedBox(height: 12),
+                    Text(
+                      typeTitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        letterSpacing: 1.5,
-                        color: AppColors.textPrimary,
+                        color: typeColor,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'تاريخ القيد: $formattedDate',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(color: AppColors.divider, height: 1),
-                  const SizedBox(height: 16),
-
-                  // تفاصيل العملية
-                  _buildDetailRow(
-                    icon: Icons.warehouse_rounded,
-                    label: 'المستودع المعني:',
-                    value: transaction.warehouseName != null
-                        ? '${transaction.warehouseName} (${transaction.warehouseCode ?? ""})'
-                        : 'مستودع رقم ${transaction.warehouseId}',
-                  ),
-                  _buildDetailRow(
-                    icon: Icons.inventory_2_rounded,
-                    label: 'الصنف المخزني:',
-                    value:
-                        transaction.itemName ??
-                        'كرتون مياه رواء - 20 علبة × 75 مل',
-                  ),
-                  _buildDetailRow(
-                    icon: Icons.format_list_numbered_rounded,
-                    label: 'الكمية المسجلة:',
-                    value:
-                        '${DateFormatter.formatNumber(transaction.quantity)} كرتون',
-                    isEmphasized: true,
-                    valueColor: typeColor,
-                  ),
-                  _buildDetailRow(
-                    icon: Icons.person_rounded,
-                    label: transaction.type == 'receipt'
-                        ? 'المسلِّم من المصنع:'
-                        : transaction.type == 'issue'
-                        ? 'المستلم / الموزع:'
-                        : 'المسؤول الموثِّق:',
-                    value: transaction.relatedPerson,
-                  ),
-                  if (transaction.referenceNumber != null &&
-                      transaction.referenceNumber!.isNotEmpty)
-                    _buildDetailRow(
-                      icon: Icons.tag_rounded,
-                      label: transaction.type == 'receipt'
-                          ? 'رقم الشحنة / الوجبة:'
-                          : 'رقم أمر الصرف:',
-                      value: transaction.referenceNumber!,
-                    ),
-                  if (transaction.damageReason != null &&
-                      transaction.damageReason!.isNotEmpty)
-                    _buildDetailRow(
-                      icon: Icons.report_problem_rounded,
-                      label: 'سبب الإتلاف:',
-                      value: transaction.damageReason!,
-                      valueColor: AppColors.damageRed,
-                    ),
-                  if (transaction.notes != null &&
-                      transaction.notes!.isNotEmpty)
-                    _buildDetailRow(
-                      icon: Icons.notes_rounded,
-                      label: 'ملاحظات إضافية:',
-                      value: transaction.notes!,
-                    ),
-
-                  const SizedBox(height: 12),
-                  const Divider(color: AppColors.divider, height: 1),
-                  const SizedBox(height: 16),
-
-                  // شارة الحالة
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.receiptGreenLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: AppColors.receiptGreen,
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Text(
+                        widget.transaction.voucherNumber,
+                        style: const TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          letterSpacing: 1.5,
+                          color: AppColors.textPrimary,
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          'معتمد ومسجل محلياً في قاعدة البيانات ✅',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'تاريخ القيد: $formattedDate',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: AppColors.divider, height: 1),
+                    const SizedBox(height: 16),
+
+                    // تفاصيل العملية
+                    _buildDetailRow(
+                      icon: Icons.warehouse_rounded,
+                      label: 'المستودع المعني:',
+                      value: widget.transaction.warehouseName != null
+                          ? '${widget.transaction.warehouseName} (${widget.transaction.warehouseCode ?? ""})'
+                          : 'مستودع رقم ${widget.transaction.warehouseId}',
+                    ),
+                    _buildDetailRow(
+                      icon: Icons.inventory_2_rounded,
+                      label: 'الصنف المخزني:',
+                      value:
+                          widget.transaction.itemName ??
+                          'كرتون مياه رواء - 20 علبة × 75 مل',
+                    ),
+                    _buildDetailRow(
+                      icon: Icons.format_list_numbered_rounded,
+                      label: 'الكمية المسجلة:',
+                      value:
+                          '${DateFormatter.formatNumber(widget.transaction.quantity)} كرتون (${DateFormatter.formatNumber(widget.transaction.quantity * 20)} قنينة)',
+                      isEmphasized: true,
+                      valueColor: typeColor,
+                    ),
+                    _buildDetailRow(
+                      icon: Icons.person_rounded,
+                      label: widget.transaction.type == 'receipt'
+                          ? 'المسلِّم من المصنع:'
+                          : widget.transaction.type == 'issue'
+                          ? 'المستلم / الموزع:'
+                          : 'المسؤول الموثِّق:',
+                      value: widget.transaction.relatedPerson,
+                    ),
+                    if (widget.transaction.referenceNumber != null &&
+                        widget.transaction.referenceNumber!.isNotEmpty)
+                      _buildDetailRow(
+                        icon: Icons.tag_rounded,
+                        label: widget.transaction.type == 'receipt'
+                            ? 'رقم إرسالية المصنع:'
+                            : 'رقم أمر الصرف:',
+                        value: widget.transaction.referenceNumber!,
+                      ),
+                    if (widget.transaction.damageReason != null &&
+                        widget.transaction.damageReason!.isNotEmpty)
+                      _buildDetailRow(
+                        icon: Icons.report_problem_rounded,
+                        label: 'سبب الإتلاف:',
+                        value: widget.transaction.damageReason!,
+                        valueColor: AppColors.damageRed,
+                      ),
+                    if (widget.transaction.notes != null &&
+                        widget.transaction.notes!.isNotEmpty)
+                      _buildDetailRow(
+                        icon: Icons.notes_rounded,
+                        label: 'ملاحظات إضافية:',
+                        value: widget.transaction.notes!,
+                      ),
+
+                    const SizedBox(height: 12),
+                    const Divider(color: AppColors.divider, height: 1),
+                    const SizedBox(height: 16),
+
+                    // شارة الحالة
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.receiptGreenLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 18,
                             color: AppColors.receiptGreen,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // زر معاينة وطباعة الـ PDF
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'سيتم تفعيل تصدير وطباعة سندات الـ PDF ومشاركتها في المرحلة 6 بإذن الله.',
-                        style: TextStyle(fontFamily: 'Cairo'),
+                          SizedBox(width: 8),
+                          Text(
+                            'معتمد ومسجل محلياً في قاعدة البيانات ✅',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.receiptGreen,
+                            ),
+                          ),
+                        ],
                       ),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: AppColors.primaryDark,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.print_rounded),
-                label: const Text(
-                  'معاينة وطباعة السند كملف PDF',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 24),
 
-            // زر العودة للرئيسية
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton.icon(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              // 1. زر معاينة وطباعة الـ PDF
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: (_isPrinting || _isSharing) ? null : _handlePrint,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: typeColor,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                ),
-                icon: const Icon(Icons.home_rounded, color: AppColors.primary),
-                label: const Text(
-                  'العودة إلى لوحة التحكم',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
+                  icon: _isPrinting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.print_rounded),
+                  label: Text(
+                    _isPrinting
+                        ? 'جارٍ إعداد الطباعة...'
+                        : 'معاينة وطباعة السند كملف PDF',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+
+              // 2. زر مشاركة السند (واتساب / تطبيقات)
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: (_isPrinting || _isSharing) ? null : _handleShare,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: _isSharing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.share_rounded),
+                  label: Text(
+                    _isSharing
+                        ? 'جارٍ تجهيز المشاركة...'
+                        : 'مشاركة السند (واتساب / تطبيقات)',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 3. زر العودة للرئيسية
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.home_rounded,
+                    color: AppColors.primary,
+                  ),
+                  label: const Text(
+                    'العودة إلى لوحة التحكم',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
