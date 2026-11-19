@@ -7,6 +7,7 @@ import 'package:inventory_app/features/inventory/models/warehouse_stock_model.da
 import 'package:inventory_app/features/reports/providers/reports_provider.dart';
 import 'package:inventory_app/features/reports/screens/reports_screen.dart';
 import 'package:inventory_app/features/reports/screens/transactions_history_screen.dart';
+import 'package:inventory_app/features/backup/screens/settings_screen.dart';
 import 'package:inventory_app/features/stocktake/models/stocktake_model.dart';
 import 'package:inventory_app/features/stocktake/providers/stocktake_provider.dart';
 import 'package:inventory_app/features/stocktake/screens/new_stocktake_screen.dart';
@@ -728,53 +729,195 @@ void main() {
     },
   );
 
-  group('اختبارات التقارير وسجل الحركات واللوحة التفاعلية - المرحلة 7 (Reports & Audit Log UI)', () {
-    final sampleTxList = [
-      StockTransactionModel(
-        id: 1,
-        voucherNumber: 'REC-202611-0001',
-        type: 'receipt',
-        warehouseId: 1,
-        warehouseName: 'المخزن الرئيسي (المصنع)',
-        warehouseCode: 'WH-01',
-        itemId: 1,
-        itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
-        quantity: 800,
-        relatedPerson: 'السائق خالد',
-        referenceNumber: 'LOT-99',
-        createdAt: DateTime.now(),
-      ),
-      StockTransactionModel(
-        id: 2,
-        voucherNumber: 'ISS-202611-0002',
-        type: 'issue',
-        warehouseId: 1,
-        warehouseName: 'المخزن الرئيسي (المصنع)',
-        warehouseCode: 'WH-01',
-        itemId: 1,
-        itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
-        quantity: 250,
-        relatedPerson: 'المندوب فهد',
-        referenceNumber: 'ORD-771',
-        createdAt: DateTime.now(),
-      ),
-      StockTransactionModel(
-        id: 3,
-        voucherNumber: 'DAM-202611-0003',
-        type: 'damage',
-        warehouseId: 1,
-        warehouseName: 'المخزن الرئيسي (المصنع)',
-        warehouseCode: 'WH-01',
-        itemId: 1,
-        itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
-        quantity: 15,
-        relatedPerson: 'أمين المستودع',
-        damageReason: 'تسريب مياه وكسر عبوات',
-        createdAt: DateTime.now(),
-      ),
-    ];
+  group(
+    'اختبارات التقارير وسجل الحركات واللوحة التفاعلية - المرحلة 7 (Reports & Audit Log UI)',
+    () {
+      final sampleTxList = [
+        StockTransactionModel(
+          id: 1,
+          voucherNumber: 'REC-202611-0001',
+          type: 'receipt',
+          warehouseId: 1,
+          warehouseName: 'المخزن الرئيسي (المصنع)',
+          warehouseCode: 'WH-01',
+          itemId: 1,
+          itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+          quantity: 800,
+          relatedPerson: 'السائق خالد',
+          referenceNumber: 'LOT-99',
+          createdAt: DateTime.now(),
+        ),
+        StockTransactionModel(
+          id: 2,
+          voucherNumber: 'ISS-202611-0002',
+          type: 'issue',
+          warehouseId: 1,
+          warehouseName: 'المخزن الرئيسي (المصنع)',
+          warehouseCode: 'WH-01',
+          itemId: 1,
+          itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+          quantity: 250,
+          relatedPerson: 'المندوب فهد',
+          referenceNumber: 'ORD-771',
+          createdAt: DateTime.now(),
+        ),
+        StockTransactionModel(
+          id: 3,
+          voucherNumber: 'DAM-202611-0003',
+          type: 'damage',
+          warehouseId: 1,
+          warehouseName: 'المخزن الرئيسي (المصنع)',
+          warehouseCode: 'WH-01',
+          itemId: 1,
+          itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+          quantity: 15,
+          relatedPerson: 'أمين المستودع',
+          damageReason: 'تسريب مياه وكسر عبوات',
+          createdAt: DateTime.now(),
+        ),
+      ];
 
-    testWidgets('1. التحقق من شاشة التقارير والرقابة المخزنية (ReportsScreen)', (tester) async {
+      testWidgets(
+        '1. التحقق من شاشة التقارير والرقابة المخزنية (ReportsScreen)',
+        (tester) async {
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() => tester.view.resetPhysicalSize());
+
+          final whProvider = WarehouseProvider();
+          whProvider.setWarehousesForTesting(testStockData);
+
+          final reportsProvider = ReportsProvider();
+          reportsProvider.setDatePreset(DateFilterPreset.allTime);
+          reportsProvider.setTransactionsForTesting(sampleTxList);
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: MultiProvider(
+                providers: [
+                  ChangeNotifierProvider<WarehouseProvider>.value(
+                    value: whProvider,
+                  ),
+                  ChangeNotifierProvider<ReportsProvider>.value(
+                    value: reportsProvider,
+                  ),
+                ],
+                child: const Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: ReportsScreen(),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('التقارير والرقابة المخزنية'), findsOneWidget);
+          expect(find.text('إجمالي الوارد (+)'), findsOneWidget);
+          expect(find.text('إجمالي المنصرف (-)'), findsOneWidget);
+          expect(find.text('إجمالي التالف (-)'), findsOneWidget);
+          expect(find.text('صافي التغير'), findsOneWidget);
+
+          expect(find.text('مسحوبات المناديب والموزعين'), findsOneWidget);
+          expect(find.text('المندوب فهد'), findsOneWidget);
+          expect(
+            find.text('تصدير التقرير كملف PDF (طباعة ومشاركة)'),
+            findsOneWidget,
+          );
+        },
+      );
+
+      testWidgets(
+        '2. التحقق من شاشة سجل الحركات والأرشيف التفصيلي (TransactionsHistoryScreen)',
+        (tester) async {
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() => tester.view.resetPhysicalSize());
+
+          final whProvider = WarehouseProvider();
+          whProvider.setWarehousesForTesting(testStockData);
+
+          final reportsProvider = ReportsProvider();
+          reportsProvider.setDatePreset(DateFilterPreset.allTime);
+          reportsProvider.setTransactionsForTesting(sampleTxList);
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: MultiProvider(
+                providers: [
+                  ChangeNotifierProvider<WarehouseProvider>.value(
+                    value: whProvider,
+                  ),
+                  ChangeNotifierProvider<ReportsProvider>.value(
+                    value: reportsProvider,
+                  ),
+                ],
+                child: const Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: TransactionsHistoryScreen(),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('سجل الحركات والأرشيف المخزني'), findsOneWidget);
+          expect(find.text('REC-202611-0001'), findsOneWidget);
+          expect(find.text('ISS-202611-0002'), findsOneWidget);
+          expect(find.text('DAM-202611-0003'), findsOneWidget);
+
+          expect(find.text('توريد واستلام (+)'), findsOneWidget);
+          expect(find.text('صرف وتوزيع (-)'), findsOneWidget);
+          expect(find.text('إتلاف وهدر (-)'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        '3. التحقق من ترقية لوحة التحكم بقسم نشاط اليوم والحركات الحديثة',
+        (tester) async {
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() => tester.view.resetPhysicalSize());
+
+          final whProvider = WarehouseProvider();
+          whProvider.setWarehousesForTesting(testStockData);
+
+          final reportsProvider = ReportsProvider();
+          reportsProvider.setTransactionsForTesting(sampleTxList);
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: MultiProvider(
+                providers: [
+                  ChangeNotifierProvider<WarehouseProvider>.value(
+                    value: whProvider,
+                  ),
+                  ChangeNotifierProvider<ReportsProvider>.value(
+                    value: reportsProvider,
+                  ),
+                ],
+                child: const Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: DashboardScreen(),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text('حركات اليوم اللحظية'), findsOneWidget);
+          expect(find.text('وارد اليوم'), findsOneWidget);
+          expect(find.text('منصرف اليوم'), findsOneWidget);
+          expect(find.text('تالف اليوم'), findsOneWidget);
+
+          expect(find.text('آخر الحركات المنفذة'), findsOneWidget);
+          expect(find.text('عرض الكل'), findsOneWidget);
+        },
+      );
+    },
+  );
+
+  group('اختبارات شاشة الإعدادات والنسخ الاحتياطي - المرحلة 8 (Settings & Backup UI)', () {
+    testWidgets('1. التحقق من شاشة الإعدادات وبطاقات النظام والمنشأة (SettingsScreen)', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -782,38 +925,33 @@ void main() {
       final whProvider = WarehouseProvider();
       whProvider.setWarehousesForTesting(testStockData);
 
-      final reportsProvider = ReportsProvider();
-      reportsProvider.setDatePreset(DateFilterPreset.allTime);
-      reportsProvider.setTransactionsForTesting(sampleTxList);
-
       await tester.pumpWidget(
         MaterialApp(
           home: MultiProvider(
             providers: [
               ChangeNotifierProvider<WarehouseProvider>.value(value: whProvider),
-              ChangeNotifierProvider<ReportsProvider>.value(value: reportsProvider),
             ],
             child: const Directionality(
               textDirection: TextDirection.rtl,
-              child: ReportsScreen(),
+              child: SettingsScreen(),
             ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('التقارير والرقابة المخزنية'), findsOneWidget);
-      expect(find.text('إجمالي الوارد (+)'), findsOneWidget);
-      expect(find.text('إجمالي المنصرف (-)'), findsOneWidget);
-      expect(find.text('إجمالي التالف (-)'), findsOneWidget);
-      expect(find.text('صافي التغير'), findsOneWidget);
-
-      expect(find.text('مسحوبات المناديب والموزعين'), findsOneWidget);
-      expect(find.text('المندوب فهد'), findsOneWidget);
-      expect(find.text('تصدير التقرير كملف PDF (طباعة ومشاركة)'), findsOneWidget);
+      expect(find.text('إعدادات النظام والنسخ الاحتياطي'), findsOneWidget);
+      expect(find.text('إدارة البيانات والنسخ الاحتياطي'), findsOneWidget);
+      expect(find.byKey(const Key('create_backup_button')), findsOneWidget);
+      expect(find.byKey(const Key('restore_backup_button')), findsOneWidget);
+      expect(find.text('معلومات المنشأة والمصنع'), findsOneWidget);
+      expect(find.text('مصنع مياه رواء للمياه النقية المعبأة'), findsOneWidget);
+      expect(find.text('معلومات النظام والتطبيق'), findsOneWidget);
+      expect(find.text('v1.0.0 (Production Ready)'), findsOneWidget);
     });
 
-    testWidgets('2. التحقق من شاشة سجل الحركات والأرشيف التفصيلي (TransactionsHistoryScreen)', (tester) async {
+    testWidgets('2. التحقق من أيقونة ترس الإعدادات في لوحة التحكم والانتقال إلى SettingsScreen', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -821,53 +959,11 @@ void main() {
       final whProvider = WarehouseProvider();
       whProvider.setWarehousesForTesting(testStockData);
 
-      final reportsProvider = ReportsProvider();
-      reportsProvider.setDatePreset(DateFilterPreset.allTime);
-      reportsProvider.setTransactionsForTesting(sampleTxList);
-
       await tester.pumpWidget(
         MaterialApp(
           home: MultiProvider(
             providers: [
               ChangeNotifierProvider<WarehouseProvider>.value(value: whProvider),
-              ChangeNotifierProvider<ReportsProvider>.value(value: reportsProvider),
-            ],
-            child: const Directionality(
-              textDirection: TextDirection.rtl,
-              child: TransactionsHistoryScreen(),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('سجل الحركات والأرشيف المخزني'), findsOneWidget);
-      expect(find.text('REC-202611-0001'), findsOneWidget);
-      expect(find.text('ISS-202611-0002'), findsOneWidget);
-      expect(find.text('DAM-202611-0003'), findsOneWidget);
-
-      expect(find.text('توريد واستلام (+)'), findsOneWidget);
-      expect(find.text('صرف وتوزيع (-)'), findsOneWidget);
-      expect(find.text('إتلاف وهدر (-)'), findsOneWidget);
-    });
-
-    testWidgets('3. التحقق من ترقية لوحة التحكم بقسم نشاط اليوم والحركات الحديثة', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final whProvider = WarehouseProvider();
-      whProvider.setWarehousesForTesting(testStockData);
-
-      final reportsProvider = ReportsProvider();
-      reportsProvider.setTransactionsForTesting(sampleTxList);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MultiProvider(
-            providers: [
-              ChangeNotifierProvider<WarehouseProvider>.value(value: whProvider),
-              ChangeNotifierProvider<ReportsProvider>.value(value: reportsProvider),
             ],
             child: const Directionality(
               textDirection: TextDirection.rtl,
@@ -876,15 +972,17 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('حركات اليوم اللحظية'), findsOneWidget);
-      expect(find.text('وارد اليوم'), findsOneWidget);
-      expect(find.text('منصرف اليوم'), findsOneWidget);
-      expect(find.text('تالف اليوم'), findsOneWidget);
+      final settingsBtn = find.byKey(const Key('dashboard_settings_button'));
+      expect(settingsBtn, findsOneWidget);
 
-      expect(find.text('آخر الحركات المنفذة'), findsOneWidget);
-      expect(find.text('عرض الكل'), findsOneWidget);
+      await tester.tap(settingsBtn);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('إعدادات النظام والنسخ الاحتياطي'), findsOneWidget);
     });
   });
 }

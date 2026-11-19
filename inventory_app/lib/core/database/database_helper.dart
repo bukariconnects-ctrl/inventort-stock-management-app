@@ -674,6 +674,40 @@ class DatabaseHelper {
     }
   }
 
+  /// الحصول على المسار الفعلي لملف قاعدة البيانات
+  Future<String> getDatabasePath() async {
+    return join(await getDatabasesPath(), DatabaseConstants.databaseName);
+  }
+
+  /// تنفيذ فحص ومعالجة سجل الكتابة المسبقة (WAL Checkpoint) لضمان اتساق البيانات على القرص
+  Future<void> checkpoint() async {
+    if (_database != null && _database!.isOpen) {
+      try {
+        await _database!.rawQuery('PRAGMA wal_checkpoint(FULL);');
+      } catch (_) {
+        // تجاهل في حال عدم تفعيل نمط WAL
+      }
+    }
+  }
+
+  /// الحصول على إجمالي عدد السندات المخزنية الصادرة
+  Future<int> getTotalTransactionsCount() async {
+    final db = await database;
+    final res = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM ${DatabaseConstants.tableTransactions}',
+    );
+    return (res.first['count'] as num?)?.toInt() ?? 0;
+  }
+
+  /// الحصول على إجمالي عدد المخازن المفعلة
+  Future<int> getTotalWarehousesCount() async {
+    final db = await database;
+    final res = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM ${DatabaseConstants.tableWarehouses}',
+    );
+    return (res.first['count'] as num?)?.toInt() ?? 0;
+  }
+
   /// إغلاق قاعدة البيانات
   Future<void> close() async {
     if (_database != null && _database!.isOpen) {

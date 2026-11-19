@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../inventory/models/warehouse_stock_model.dart';
+import '../../backup/screens/settings_screen.dart';
 import '../../reports/providers/reports_provider.dart';
 import '../../reports/screens/transactions_history_screen.dart';
 import '../../transactions/models/stock_transaction_model.dart';
@@ -40,6 +41,17 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () {
               context.read<WarehouseProvider>().loadWarehousesWithStock();
               reportsProvider?.loadTransactions();
+            },
+          ),
+          IconButton(
+            key: const Key('dashboard_settings_button'),
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'إعدادات النظام والنسخ الاحتياطي',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
             },
           ),
         ],
