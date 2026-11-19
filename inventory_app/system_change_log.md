@@ -4,70 +4,93 @@
 ---
 
 ### الحالة الحالية للنظام (Current Status)
-* **المرحلة المكتملة:** المرحلة 3 - واجهات إدارة المخازن، عرض الأرصدة، ونظام التنبيهات مع Provider (Phase 3: Warehouses & Inventory Management UI & State Management).
+* **المرحلة المكتملة:** المرحلة 4 - سندات وعمليات المخزون (استلام، صرف، إتلاف) وربطها بالرصيد اللحظي (Phase 4: Stock Operations & Vouchers).
 * **حالة النظام:** مكتمل وجاهز 100% بدون أي أخطاء أو تحذيرات برمجية (`No issues found!`).
-* **الاختبارات الآلية:** اجتياز جميع اختبارات الوحدة واختبارات الواجهات بنجاح (`12 of 12 passed`).
-* **النمط التقني:** إطار عمل Flutter مع Material 3 و Provider لإدارة الحالة، ونمط العمل المستقل بدون إنترنت (Offline-First SQLite).
+* **الاختبارات الآلية:** اجتياز جميع اختبارات الوحدة واختبارات الواجهات بنجاح (`14 of 14 passed`).
+* **النمط التقني:** إطار عمل Flutter مع Material 3 و Provider لإدارة الحالة، ومعاملات ذرية في SQLite لمنع الأرصدة السالبة نهائياً (Offline-First).
 
 ---
 
-### 1. ملخص إنجازات المرحلة 3 (Phase 3 Highlights)
+### 1. ملخص إنجازات المرحلة 4 (Phase 4 Highlights)
 
-#### أ. مزودي الحالة وإدارة البيانات (State Management - Providers)
-* **`WarehouseProvider`** ([lib/features/warehouses/providers/warehouse_provider.dart](file:///d:/inventory_management_app/inventory_app/lib/features/warehouses/providers/warehouse_provider.dart)):
-  * إدارة قائمة المخازن والأرصدة `List<WarehouseStockModel> _warehousesWithStock`.
-  * دوال التحميل والتحديث التلقائي:
-    * `loadWarehousesWithStock()`: لجلب المخازن وأرصدتها اللحظية من SQLite وتحديث كافة الواجهات التابعة.
-    * `addWarehouse(WarehouseModel warehouse)`: لإضافة مخزن جديد مع تهيئة رصيد الصنف الافتراضي له بصفر، ثم إعادة تحميل البيانات فورياً.
-    * `updateWarehouse(WarehouseModel warehouse)`: لتعديل بيانات المخزن وحد التنبيه وحفظها في SQLite.
-  * خصائص إحصائية ذكية:
-    * `totalStockCount`: إجمالي كراتين المياه في جميع المخازن معاً.
-    * `lowStockWarehouses`: قائمة المخازن التي وصل رصيدها الحالي لحد التنبيه الأدنى أو أقل.
-    * `hasLowStockAlert`: مؤشر منطقي يحدد وجود أي عجز أو نقص بالمخازن لإظهار شريط التنبيه فورياً.
-
-#### ب. الإطار الرئيسي للتنقل (Main Navigation Shell)
-* **`MainScreen`** ([lib/features/home/main_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/home/main_screen.dart)):
-  * شريط تنقل سفلي عصري بنمط Material 3 وألوان المياه النقية (NavigationBar).
-  * 4 تبويبات رئيسية:
-    1. **الرئيسية (Dashboard):** لوحة القيادة الشاملة والأرصدة والإجراءات السريعة.
-    2. **المخازن (Warehouses):** شاشة إدارة وتعديل وإضافة المستودعات.
-    3. **العمليات (Operations):** واجهة مجهزة بالكامل لاستقبال شاشات السندات في المرحلة 4.
-    4. **التقارير والسجل (Reports):** واجهة مجهزة لأرشيف وفلاتر السندات والطباعة.
-
-#### ج. لوحة التحكم الرئيسية (Dashboard Screen)
-* **`DashboardScreen`** ([lib/features/home/screens/dashboard_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/home/screens/dashboard_screen.dart)):
-  1. **ترويسة الترحيب والتاريخ:** ترحيب بأمين المخزن، عرض تاريخ اليوم بالصيغة العربية، وشارة حالة العمل دون إنترنت "محلي SQLite".
-  2. **البطاقة العريضة (Hero Card):** إبراز إجمالي المخزون الكلي بالكرتون بخط عريض، مع شارة مواصفات العبوة (20 قنينة × 75 مل).
-  3. **شريط التنبيه البارز (Alert Banner):** يظهر تلقائياً باللون البرتقالي/الأحمر الفاتح عند انخفاض رصيد أي مخزن عن حد الأمان، موضحاً أسماء المخازن والكمية المتبقية وحد الطلب.
-  4. **قسم أرصدة المخازن الحالية:** كروت أنيقة لكل مستودع توضح الكود، الاسم، الرصيد، شارة الحالة ("رصيد آمن" بالأخضر أو "مخزون منخفض" بالأحمر)، ومؤشر بياني (Progress Indicator).
-  5. **أزرار العمليات السريعة:** أزرار مباشرة لإصدار "سند استلام"، "سند صرف"، و"سند إتلاف".
-  6. **دعم السحب للتحديث (Pull-to-Refresh):** عبر `RefreshIndicator` لتحديث قراءة قاعدة البيانات يدوياً في أي لحظة.
-
-#### د. شاشة إدارة المستودعات (Warehouses Screen & Dialog)
-* **`WarehousesScreen`** ([lib/features/warehouses/screens/warehouses_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/warehouses/screens/warehouses_screen.dart)):
-  1. عرض كامل لقائمة المستودعات مع أكوادها (`WH-01`, `WH-02`) وأرصدتها وحدود التنبيه.
-  2. زر عائم دائري (`FloatingActionButton`) لإضافة مخزن جديد.
-  3. نافذة منبثقة تفاعلية (`AlertDialog`) تدعم الإضافة والتعديل مع التحقق الصارم من صحة المدخلات (Form Validation):
-     * التحقق من اسم المخزن والكود الفريد والوصف وحد التنبيه كقيمة رقمية موجبة.
-     * إظهار رسائل SnackBar تأكيدية خضراء عند الحفظ وتحديث القائمة لحظياً.
-  4. إمكانية تعديل أي مخزن قائم بنقرة واحدة وتحديثه مباشرة في SQLite.
-
-#### هـ. نقطة الانطلاق الرئيسية والتنقل السلس
-* **`main.dart`** ([lib/main.dart](file:///d:/inventory_management_app/inventory_app/lib/main.dart)):
-  * تغليف التطبيق بـ `MultiProvider` وتوفير `WarehouseProvider` مع استدعاء `loadWarehousesWithStock()` تلقائياً فور التشغيل.
-  * دعم الانتقال التلقائي السلس أو الفوري من الشاشة الترحيبية إلى `MainScreen`.
+#### أ. مزود العمليات وحركات المخزون (TransactionProvider)
+* **`TransactionProvider`** ([lib/features/transactions/providers/transaction_provider.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/providers/transaction_provider.dart)):
+  * إدارة حالات التحميل `isLoading` ومعالجة الأخطاء `errorMessage` وتخزين آخر سند تم تنفيذه `lastSubmittedTransaction`.
+  * **`submitReceipt(...)`**: استدعاء `insertReceiptTransaction` لزيادة رصيد المخزن ذرياً وإشعار `WarehouseProvider` بإعادة قراءة وتحديث أرصدة لوحة التحكم فورياً.
+  * **`submitIssue(...)`**: استدعاء `insertIssueTransaction`، معالجة استثناء `InsufficientStockException` باللغة العربية، وخصم الرصيد وتحديث الواجهات فورياً عند النجاح.
+  * **`submitDamage(...)`**: استدعاء `insertDamageTransaction`، توثيق سبب التلف وخصم الكمية التالفة وتحديث الرصيد فورياً.
+  * **`getNextVoucherNumber(...)`**: جلب رقم السند التسلسلي التالي تلقائياً لعرضه في شاشات الإدخال (مثل `REC-202611-0001`، `ISS-202611-0001`، `DAM-202611-0001`).
 
 ---
 
-### 2. نتائج الفحص والاختبارات الآلية (Verification & Tests)
+#### ب. شاشة تبويب العمليات وسندات المخزون (Operations Screen)
+* **`OperationsScreen`** ([lib/features/transactions/screens/operations_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/operations_screen.dart)):
+  * واجهة عصرية تحتوي على بطاقات الدخول للعمليات الثلاث مع شارات الأثر المخزني:
+    1. **سند استلام توريد من المصنع:** شارة "زيادة رصيد (+)" باللون الأخضر الزمردي.
+    2. **سند صرف لموزع / مندوب:** شارة "خصم رصيد (-)" باللون الأزرق المائي.
+    3. **سند إتلاف وهدر مخزني:** شارة "خصم تالف (-)" باللون البرتقالي المحمر.
+  * تفعيل تبويب العمليات في شريط التنقل السفلي (`MainScreen`).
+  * ربط أزرار العمليات السريعة في `DashboardScreen` لتفتح هذه النماذج مباشرة.
+
+---
+
+#### ج. شاشة سند استلام من المصنع (New Receipt Screen)
+* **`NewReceiptScreen`** ([lib/features/transactions/screens/new_receipt_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_receipt_screen.dart)):
+  * عرض رقم السند التسلسلي كـ Badge علوي للقراءة فقط.
+  * قائمة منسدلة لاختيار المستودع المستلم مع إيضاح الرصيد الحالي.
+  * حقل الصنف المخزني الافتراضي: "كرتون مياه رواء - 20 علبة × 75 مل".
+  * التحقق الصارم من الكمية المستلمة (رقم صحيح موجب > 0).
+  * إدخال اسم المسلّم من المصنع / السائق ورقم الشحنة/الوجبة والملاحظات.
+  * الانتقال التلقائي لشاشة تفاصيل السند فور نجاح الحفظ وزيادة الرصيد.
+
+---
+
+#### د. شاشة سند صرف لموزع/مندوب مع الفحص الحي (New Issue Screen)
+* **`NewIssueScreen`** ([lib/features/transactions/screens/new_issue_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_issue_screen.dart)):
+  * عرض رقم سند الصرف التلقائي (`ISS-YYYYMM-XXXX`).
+  * **عرض حي للرصيد المتاح:** كرت تفاعلي تحت قائمة المخازن يوضح فورياً "الرصيد المتاح حالياً في هذا المخزن: X كرتون".
+  * **التحقق الحي (Live Validation):** عند إدخال كمية تتجاوز الرصيد المتوفر، يظهر تنبيه تحذيري فوري باللون الأحمر مع تعطيل زر الحفظ لمنع الخطأ البشري.
+  * حقول إلزامية لرقم أمر الصرف الإداري واسم الموزع/المندوب ورقم السيارة.
+  * حماية من النقر المزدوج وعرض مؤشر التحميل أثناء العملية الذرية.
+
+---
+
+#### هـ. شاشة سند إتلاف وهدر مخزني (New Damage Screen)
+* **`NewDamageScreen`** ([lib/features/transactions/screens/new_damage_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_damage_screen.dart)):
+  * عرض رقم السند التلقائي (`DAM-YYYYMM-XXXX`) وفحص الرصيد المتوفر بالمخزن.
+  * قائمة منسدلة بأسباب الإتلاف المعتمدة: (كسر وتهشم عبوات - تسريب مياه من الكرتون - عيب تغليف ومصنعي - سوء تخزين ورطوبة - أخرى).
+  * توثيق اسم أمين المخزن أو المسؤول الموثّق للتلف وملاحظات الفحص.
+  * **نافذة تأكيد تحذيرية (`AlertDialog`):** قبل الخصم النهائي للتأكيد على مسؤولية أمين المخزن عن تقليص المخزون.
+
+---
+
+#### و. شاشة عرض تفاصيل السند المنفذ (Voucher Details View)
+* **`VoucherDetailsScreen`** ([lib/features/transactions/screens/voucher_details_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/voucher_details_screen.dart)):
+  * عرض السند على هيئة فاتورة رسمية أنيقة توضح:
+    * نوع السند، رقمه، تاريخ ووقت الإدخال الفعلي.
+    * المستودع المعني، الصنف، والكمية بخط بارز ولون مخصص لنوع السند.
+    * بيانات المستلم/المسلّم ورقم المرجع أو سبب الإتلاف والملاحظات.
+    * شارة الاعتماد: "معتمد ومسجل محلياً في قاعدة البيانات ✅".
+    * زر لمعاينة وطباعة السند كملف PDF وزر للعودة للرئيسية.
+
+---
+
+#### ز. تهيئة التطبيق ونقطة الانطلاق (App Entry Point)
+* **`lib/main.dart`**:
+  * تسجيل `TransactionProvider` داخل `MultiProvider` بجانب `WarehouseProvider`.
+  * ربط أزرار الإجراءات السريعة في `DashboardScreen` وتفعيل شاشة العمليات في `MainScreen`.
+
+---
+
+### 2. نتائج الفحص والتحقق الآلي (Verification & Tests)
 * **الفحص البرمجي (`flutter analyze`):**
   ```text
   Analyzing inventory_app...
-  No issues found! (ran in 2.7s)
+  No issues found! (ran in 8.2s)
   ```
 * **فحص الاختبارات الآلية (`flutter test`):**
   ```text
-  00:02 +12: All tests passed!
+  00:05 +14: All tests passed!
     ✓ 1. التحقق من حقن البيانات الافتراضية (Initial Seed Data)
     ✓ 2. التحقق من سند الاستلام الذري (Atomic Receipt Transaction)
     ✓ 3. التحقق من سند الصرف الذري (Atomic Issue Transaction)
@@ -80,15 +103,17 @@
     ✓ 10. التحقق من لوحة التحكم الرئيسية (DashboardScreen) وشريط التنبيهات
     ✓ 11. التحقق من شاشة إدارة المخازن (WarehousesScreen) والأزرار
     ✓ 12. التحقق من شاشة التنقل الرئيسية (MainScreen)
+    ✓ 13. التحقق من شاشة تبويب العمليات (OperationsScreen)
+    ✓ 14. التحقق من شاشة عرض تفاصيل السند (VoucherDetailsScreen)
   ```
 
 ---
 
 ### 3. الجاهزية للمرحلة التالية (Next Stage Readiness)
-* **المرحلة 4 القادمة:** **سندات وعمليات المخزون (Goods Receipt, Issue, and Damage Vouchers UI & Logic)**.
+* **المرحلة 5 القادمة:** **الجرد المخزني والتسويات الدورية (Stocktake & Reconciliation UI & Logic)**.
 * **الخطوات القادمة:**
-  1. بناء مزود حركات المخزون `TransactionProvider` للربط بين الواجهات ودوال العمليات الذرية في `DatabaseHelper`.
-  2. تصميم شاشة إدخال "سند استلام إنتاج من المصنع" مع توليد رقم السند التلقائي وتحديد المخزن والكمية والملاحظات ورقم الوجبة.
-  3. تصميم شاشة إدخال "سند صرف لموزع" مع فحص الرصيد المتاح لحظياً ومنع التجاوز.
-  4. تصميم شاشة إدخال "سند إتلاف وهدر" مع توثيق سبب التلف وحسم الرصيد.
-  5. شاشة بطاقة تفاصيل السند المنفذ مع خيارات الطباعة والمشاركة.
+  1. بناء مزود الجرد `StocktakeProvider`.
+  2. تصميم واجهة بدء جلسة جرد جديدة لمخزن معين مع جلب الرصيد الدفتري المسجل آلياً.
+  3. حقل إدخال الكمية الفعلية المحصورة يدوياً واحتساب الفارق (عجز أو فائض أو مطابق) لحظياً.
+  4. حقل توثيق سبب التسوية واعتماد الجرد لضبط الرصيد في SQLite ومطابقته للواقع الفعلي.
+  5. شاشة سجل وأرشيف جلسات الجرد والتسويات السابقة.

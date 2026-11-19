@@ -49,7 +49,8 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
         if (widget.preselectedWarehouseId != null) {
           _selectedWarehouseId = widget.preselectedWarehouseId;
         } else if (whProvider.warehousesWithStock.isNotEmpty) {
-          _selectedWarehouseId = whProvider.warehousesWithStock.first.warehouseId;
+          _selectedWarehouseId =
+              whProvider.warehousesWithStock.first.warehouseId;
         }
         _isInitializing = false;
       });
@@ -160,7 +161,9 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.receiptGreen.withAlpha(80)),
+                        border: Border.all(
+                          color: AppColors.receiptGreen.withAlpha(80),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.receiptGreen.withAlpha(20),
@@ -305,7 +308,9 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               hintText: 'أدخل عدد الكراتين الواردة، مثال: 500',
-                              prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                              prefixIcon: Icon(
+                                Icons.format_list_numbered_rounded,
+                              ),
                               suffixText: 'كرتون',
                             ),
                             validator: (value) {
@@ -379,7 +384,8 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                             controller: _notesController,
                             maxLines: 2,
                             decoration: const InputDecoration(
-                              hintText: 'أي تفاصيل عن جودة التغليف أو حالة الدفعة',
+                              hintText:
+                                  'أي تفاصيل عن جودة التغليف أو حالة الدفعة',
                               prefixIcon: Icon(Icons.note_alt_rounded),
                             ),
                           ),
@@ -426,4 +432,3 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
     );
   }
 }
-

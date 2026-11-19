@@ -4,6 +4,9 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../inventory/models/warehouse_stock_model.dart';
+import '../../transactions/screens/new_damage_screen.dart';
+import '../../transactions/screens/new_issue_screen.dart';
+import '../../transactions/screens/new_receipt_screen.dart';
 import '../../warehouses/providers/warehouse_provider.dart';
 
 /// شاشة لوحة التحكم الرئيسية (Dashboard Screen)
@@ -446,25 +449,6 @@ class DashboardScreen extends StatelessWidget {
 
   /// 4. أزرار الإجراءات السريعة
   Widget _buildQuickActions(BuildContext context) {
-    void showPhase4Notice(String actionName) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'سيتم تفعيل واجهة "$actionName" بالكامل في المرحلة 4 القادمة بإذن الله.',
-            style: const TextStyle(fontFamily: 'Cairo'),
-          ),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.primaryDark,
-          action: SnackBarAction(
-            label: 'حسناً',
-            textColor: Colors.white,
-            onPressed: () {},
-          ),
-        ),
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -486,7 +470,11 @@ class DashboardScreen extends StatelessWidget {
                 label: 'سند استلام',
                 color: AppColors.receiptGreen,
                 bgColor: AppColors.receiptGreenLight,
-                onTap: () => showPhase4Notice('سند استلام إنتاج جديد'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewReceiptScreen()),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 10),
@@ -498,7 +486,11 @@ class DashboardScreen extends StatelessWidget {
                 label: 'سند صرف',
                 color: AppColors.issueBlue,
                 bgColor: AppColors.issueBlueLight,
-                onTap: () => showPhase4Notice('سند صرف لموزع'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewIssueScreen()),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 10),
@@ -510,7 +502,11 @@ class DashboardScreen extends StatelessWidget {
                 label: 'سند إتلاف',
                 color: AppColors.damageRed,
                 bgColor: AppColors.damageRedLight,
-                onTap: () => showPhase4Notice('سند إتلاف وهدر'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const NewDamageScreen()),
+                  );
+                },
               ),
             ),
           ],

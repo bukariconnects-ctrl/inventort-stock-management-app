@@ -9,7 +9,7 @@ class TransactionProvider with ChangeNotifier {
   final DatabaseHelper _dbHelper;
 
   TransactionProvider({DatabaseHelper? dbHelper})
-      : _dbHelper = dbHelper ?? DatabaseHelper();
+    : _dbHelper = dbHelper ?? DatabaseHelper();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -30,8 +30,8 @@ class TransactionProvider with ChangeNotifier {
       final prefix = type == 'receipt'
           ? 'REC'
           : type == 'issue'
-              ? 'ISS'
-              : 'DAM';
+          ? 'ISS'
+          : 'DAM';
       return '$prefix-$ym-0001';
     }
   }
@@ -136,4 +136,3 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-

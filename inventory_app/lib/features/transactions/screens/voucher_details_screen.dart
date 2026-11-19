@@ -42,8 +42,7 @@ class VoucherDetailsScreen extends StatelessWidget {
         typeTitle = 'سند حركة مخزنية';
     }
 
-    final formattedDate =
-        DateFormatter.formatDateTime(transaction.createdAt);
+    final formattedDate = DateFormatter.formatDateTime(transaction.createdAt);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -141,7 +140,8 @@ class VoucherDetailsScreen extends StatelessWidget {
                   _buildDetailRow(
                     icon: Icons.inventory_2_rounded,
                     label: 'الصنف المخزني:',
-                    value: transaction.itemName ??
+                    value:
+                        transaction.itemName ??
                         'كرتون مياه رواء - 20 علبة × 75 مل',
                   ),
                   _buildDetailRow(
@@ -157,8 +157,8 @@ class VoucherDetailsScreen extends StatelessWidget {
                     label: transaction.type == 'receipt'
                         ? 'المسلِّم من المصنع:'
                         : transaction.type == 'issue'
-                            ? 'المستلم / الموزع:'
-                            : 'المسؤول الموثِّق:',
+                        ? 'المستلم / الموزع:'
+                        : 'المسؤول الموثِّق:',
                     value: transaction.relatedPerson,
                   ),
                   if (transaction.referenceNumber != null &&
@@ -246,10 +246,7 @@ class VoucherDetailsScreen extends StatelessWidget {
                 icon: const Icon(Icons.print_rounded),
                 label: const Text(
                   'معاينة وطباعة السند كملف PDF',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -323,4 +320,3 @@ class VoucherDetailsScreen extends StatelessWidget {
     );
   }
 }
-

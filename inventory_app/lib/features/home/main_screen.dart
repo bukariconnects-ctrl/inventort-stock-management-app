@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../transactions/screens/operations_screen.dart';
 import '../warehouses/screens/warehouses_screen.dart';
 import 'screens/dashboard_screen.dart';
 
@@ -28,7 +29,7 @@ class _MainScreenState extends State<MainScreen> {
         onNavigateToOperations: () => _onTabSelected(2),
       ),
       const WarehousesScreen(),
-      _buildOperationsPlaceholder(),
+      const OperationsScreen(),
       _buildReportsPlaceholder(),
     ];
 
@@ -89,60 +90,6 @@ class _MainScreenState extends State<MainScreen> {
               label: 'التقارير والسجل',
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOperationsPlaceholder() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('سندات وعمليات المخزون')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withAlpha(30),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.receipt_long_rounded,
-                  size: 64,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'سندات الاستلام والصرف والإتلاف',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'سيتم تفعيل دورة العمل الخاصة بسندات الاستلام من خط الإنتاج، الصرف للموزعين، وسندات الهدر في المرحلة 4 القادمة.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _onTabSelected(0),
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('العودة إلى لوحة التحكم'),
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -155,10 +155,7 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
                 SizedBox(width: 8),
                 Text(
                   'تأكيد إتلاف واستبعاد المخزون',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
               ],
             ),
@@ -249,7 +246,9 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
     final txProvider = context.watch<TransactionProvider>();
 
     final isButtonEnabled =
-        !_isExceedingStock && _currentAvailableStock > 0 && !txProvider.isLoading;
+        !_isExceedingStock &&
+        _currentAvailableStock > 0 &&
+        !txProvider.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -273,8 +272,9 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: AppColors.damageRed.withAlpha(80)),
+                        border: Border.all(
+                          color: AppColors.damageRed.withAlpha(80),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.damageRed.withAlpha(20),
@@ -450,8 +450,9 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               hintText: 'أدخل عدد الكراتين التالفة، مثال: 10',
-                              prefixIcon:
-                                  const Icon(Icons.format_list_numbered_rounded),
+                              prefixIcon: const Icon(
+                                Icons.format_list_numbered_rounded,
+                              ),
                               suffixText: 'كرتون',
                               errorText: _isExceedingStock
                                   ? 'الكمية التالفة تتجاوز الرصيد المتوفر بالمخزن!'
@@ -495,7 +496,10 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
                             items: _damageReasons.map((reason) {
                               return DropdownMenuItem<String>(
                                 value: reason,
-                                child: Text(reason, style: const TextStyle(fontSize: 13)),
+                                child: Text(
+                                  reason,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               );
                             }).toList(),
                             onChanged: (val) {
@@ -561,7 +565,9 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: isButtonEnabled ? _confirmAndSubmitDamage : null,
+                        onPressed: isButtonEnabled
+                            ? _confirmAndSubmitDamage
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.damageRed,
                           foregroundColor: Colors.white,
@@ -595,4 +601,3 @@ class _NewDamageScreenState extends State<NewDamageScreen> {
     );
   }
 }
-

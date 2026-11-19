@@ -12,9 +12,7 @@ class OperationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('سندات وعمليات المخزون'),
-      ),
+      appBar: AppBar(title: const Text('سندات وعمليات المخزون')),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
@@ -38,11 +36,7 @@ class OperationsScreen extends StatelessWidget {
             ),
             child: const Row(
               children: [
-                Icon(
-                  Icons.receipt_long_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+                Icon(Icons.receipt_long_rounded, color: Colors.white, size: 32),
                 SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -102,9 +96,9 @@ class OperationsScreen extends StatelessWidget {
             bgColor: AppColors.issueBlueLight,
             badgeText: 'خصم رصيد (-)',
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NewIssueScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const NewIssueScreen()));
             },
           ),
           const SizedBox(height: 14),
@@ -228,4 +222,3 @@ class OperationsScreen extends StatelessWidget {
     );
   }
 }
-

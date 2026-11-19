@@ -187,7 +187,9 @@ class _NewIssueScreenState extends State<NewIssueScreen> {
     final txProvider = context.watch<TransactionProvider>();
 
     final isButtonEnabled =
-        !_isExceedingStock && _currentAvailableStock > 0 && !txProvider.isLoading;
+        !_isExceedingStock &&
+        _currentAvailableStock > 0 &&
+        !txProvider.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -211,7 +213,9 @@ class _NewIssueScreenState extends State<NewIssueScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.issueBlue.withAlpha(80)),
+                        border: Border.all(
+                          color: AppColors.issueBlue.withAlpha(80),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.issueBlue.withAlpha(20),
@@ -387,8 +391,9 @@ class _NewIssueScreenState extends State<NewIssueScreen> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               hintText: 'أدخل عدد الكراتين، مثال: 150',
-                              prefixIcon:
-                                  const Icon(Icons.format_list_numbered_rounded),
+                              prefixIcon: const Icon(
+                                Icons.format_list_numbered_rounded,
+                              ),
                               suffixText: 'كرتون',
                               errorText: _isExceedingStock
                                   ? 'الكمية المطلوبة تتجاوز الرصيد المتوفر بالمخزن!'
@@ -522,4 +527,3 @@ class _NewIssueScreenState extends State<NewIssueScreen> {
     );
   }
 }
-

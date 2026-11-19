@@ -6,6 +6,7 @@ import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/main_screen.dart';
+import 'features/transactions/providers/transaction_provider.dart';
 import 'features/warehouses/providers/warehouse_provider.dart';
 
 void main() {
@@ -26,6 +27,8 @@ class RawaaWmsApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => WarehouseProvider()..loadWarehousesWithStock(),
         ),
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => TransactionProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
@@ -45,7 +48,7 @@ class RawaaWmsApp extends StatelessWidget {
   }
 }
 
-/// شاشة البداية والترحيب التأسيسية التي تنقل تلقائياً للوحة التحكم
+/// .... شاشة البداية والترحيب التأسيسية التي تنقل تلقائياً للوحة التحكم
 class SplashScreen extends StatefulWidget {
   final bool autoNavigate;
 
