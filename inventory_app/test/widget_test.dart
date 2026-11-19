@@ -4,6 +4,10 @@ import 'package:inventory_app/core/constants/app_constants.dart';
 import 'package:inventory_app/features/home/main_screen.dart';
 import 'package:inventory_app/features/home/screens/dashboard_screen.dart';
 import 'package:inventory_app/features/inventory/models/warehouse_stock_model.dart';
+import 'package:inventory_app/features/stocktake/models/stocktake_model.dart';
+import 'package:inventory_app/features/stocktake/providers/stocktake_provider.dart';
+import 'package:inventory_app/features/stocktake/screens/new_stocktake_screen.dart';
+import 'package:inventory_app/features/stocktake/screens/stocktake_history_screen.dart';
 import 'package:inventory_app/features/transactions/models/stock_transaction_model.dart';
 import 'package:inventory_app/features/transactions/providers/transaction_provider.dart';
 import 'package:inventory_app/features/transactions/screens/operations_screen.dart';
@@ -219,5 +223,306 @@ void main() {
       );
       expect(find.text('معاينة وطباعة السند كملف PDF'), findsOneWidget);
     });
+  });
+
+  group(
+    'اختبارات واجهات الجرد والتسوية - المرحلة 5 (Stocktake & Reconciliation UI)',
+    () {
+      testWidgets(
+        '1. التحقق من قسم الجرد والتسوية في شاشة العمليات (OperationsScreen)',
+        (tester) async {
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Directionality(
+                textDirection: TextDirection.rtl,
+                child: OperationsScreen(),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          expect(find.text('الجرد والتسوية الدورية'), findsOneWidget);
+          expect(find.text('بدء جرد جديد'), findsOneWidget);
+          expect(find.text('سجل الجرد السابق'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        '2. التحقق من شاشة أرشيف وسجل جلسات الجرد (StocktakeHistoryScreen) في الحالة الفارغة والمملوءة',
+        (tester) async {
+          final stocktakeProvider = StocktakeProvider();
+          stocktakeProvider.setHistoryForTesting([]);
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ChangeNotifierProvider<StocktakeProvider>.value(
+                value: stocktakeProvider,
+                child: const Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: StocktakeHistoryScreen(),
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+
+          expect(find.text('لا توجد جلسات جرد مسجلة بعد'), findsOneWidget);
+          expect(find.text('بدء جرد مخزني جديد'), findsOneWidget);
+
+          // اختبار مع بيانات جرد مسجلة
+          final sampleStocktakes = [
+            StocktakeModel(
+              id: 1,
+              code: 'STK-202611-0001',
+              warehouseId: 1,
+              itemId: 1,
+              systemQuantity: 1200,
+              actualQuantity: 1190,
+              difference: -10,
+              notes: 'كراتين تالفة لم تسجل مسبقاً',
+              warehouseName: 'المخزن الرئيسي (المصنع)',
+              warehouseCode: 'WH-01',
+              itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+              createdAt: DateTime(2026, 11, 18, 14, 0),
+            ),
+            StocktakeModel(
+              id: 2,
+              code: 'STK-202611-0002',
+              warehouseId: 2,
+              itemId: 1,
+              systemQuantity: 150,
+              actualQuantity: 150,
+              difference: 0,
+              warehouseName: 'مخزن التوزيع الخارجي',
+              warehouseCode: 'WH-02',
+              itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+              createdAt: DateTime(2026, 11, 19, 9, 30),
+            ),
+          ];
+
+          stocktakeProvider.setHistoryForTesting(sampleStocktakes);
+          await tester.pump();
+
+          expect(find.text('STK-202611-0001'), findsOneWidget);
+          expect(find.text('STK-202611-0002'), findsOneWidget);
+          expect(find.textContaining('عجز'), findsOneWidget);
+          expect(find.textContaining('مطابق تماماً'), findsOneWidget);
+        },
+      );
+
+      testWidgets(
+        '3. التحقق من شاشة إجراء جرد جديد وحساب الفوارق لحظياً (NewStocktakeScreen)',
+        (tester) async {
+          tester.view.physicalSize = const Size(1080, 2400);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() => tester.view.resetPhysicalSize());
+
+          final whProvider = WarehouseProvider();
+          whProvider.setWarehousesForTesting(testStockData);
+
+          final stocktakeProvider = StocktakeProvider();
+
+          await tester.pumpWidget(
+            MaterialApp(
+              home: MultiProvider(
+                providers: [
+                  ChangeNotifierProvider<WarehouseProvider>.value(
+                    value: whProvider,
+                  ),
+                  ChangeNotifierProvider<StocktakeProvider>.value(
+                    value: stocktakeProvider,
+                  ),
+                ],
+                child: const Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: NewStocktakeScreen(preselectedWarehouseId: 1),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          // التحقق من الحقول الأساسية
+          expect(find.text('جلسة جرد وتسوية مخزنية'), findsOneWidget);
+          expect(
+            find.text('الرصيد الدفتري المسجل بالنظام حالياً'),
+            findsOneWidget,
+          );
+          expect(find.text('1,200 كرتون'), findsWidgets);
+          expect(find.text('اعتماد الجرد وتسوية الرصيد'), findsOneWidget);
+
+          // تجربة إدخال رصيد مطابق تماماً (1200)
+          final actualField = find.byType(TextFormField).first;
+          await tester.enterText(actualField, '1200');
+          await tester.pump();
+
+          expect(find.text('الرصيد مطابق تماماً ✅'), findsOneWidget);
+
+          // تجربة إدخال رصيد به عجز (1150)
+          await tester.enterText(actualField, '1150');
+          await tester.pump();
+
+          expect(
+            find.text('عجز في المخزن بمقدار: 50 كرتون ⚠️'),
+            findsOneWidget,
+          );
+
+          // تجربة إدخال رصيد به زيادة (1230)
+          await tester.enterText(actualField, '1230');
+          await tester.pump();
+
+          expect(
+            find.text('فائض / زيادة غير مسجلة بمقدار: +30 كرتون ℹ️'),
+            findsOneWidget,
+          );
+        },
+      );
+    },
+  );
+
+  group('اختبارات واجهات الجرد والتسوية - المرحلة 5 (Stocktake & Reconciliation UI)', () {
+    testWidgets(
+      '1. التحقق من قسم الجرد والتسوية في شاشة العمليات (OperationsScreen)',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: OperationsScreen(),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('الجرد والتسوية الدورية'), findsOneWidget);
+        expect(find.text('بدء جرد جديد'), findsOneWidget);
+        expect(find.text('سجل الجرد السابق'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '2. التحقق من شاشة أرشيف وسجل جلسات الجرد (StocktakeHistoryScreen) في الحالة الفارغة والمملوءة',
+      (tester) async {
+        final stocktakeProvider = StocktakeProvider();
+        stocktakeProvider.setHistoryForTesting([]);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ChangeNotifierProvider<StocktakeProvider>.value(
+              value: stocktakeProvider,
+              child: const Directionality(
+                textDirection: TextDirection.rtl,
+                child: StocktakeHistoryScreen(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('لا توجد جلسات جرد مسجلة بعد'), findsOneWidget);
+        expect(find.text('بدء جرد مخزني جديد'), findsOneWidget);
+
+        // اختبار مع بيانات جرد مسجلة
+        final sampleStocktakes = [
+          StocktakeModel(
+            id: 1,
+            code: 'STK-202611-0001',
+            warehouseId: 1,
+            itemId: 1,
+            systemQuantity: 1200,
+            actualQuantity: 1190,
+            difference: -10,
+            notes: 'كراتين تالفة لم تسجل مسبقاً',
+            warehouseName: 'المخزن الرئيسي (المصنع)',
+            warehouseCode: 'WH-01',
+            itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+            createdAt: DateTime(2026, 11, 18, 14, 0),
+          ),
+          StocktakeModel(
+            id: 2,
+            code: 'STK-202611-0002',
+            warehouseId: 2,
+            itemId: 1,
+            systemQuantity: 150,
+            actualQuantity: 150,
+            difference: 0,
+            warehouseName: 'مخزن التوزيع الخارجي',
+            warehouseCode: 'WH-02',
+            itemName: 'كرتون مياه رواء - 20 علبة × 75 مل',
+            createdAt: DateTime(2026, 11, 19, 9, 30),
+          ),
+        ];
+
+        stocktakeProvider.setHistoryForTesting(sampleStocktakes);
+        await tester.pump();
+
+        expect(find.text('STK-202611-0001'), findsOneWidget);
+        expect(find.text('STK-202611-0002'), findsOneWidget);
+        expect(find.textContaining('عجز'), findsOneWidget);
+        expect(find.textContaining('مطابق تماماً'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '3. التحقق من شاشة إجراء جرد جديد وحساب الفوارق لحظياً (NewStocktakeScreen)',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final whProvider = WarehouseProvider();
+        whProvider.setWarehousesForTesting(testStockData);
+
+        final stocktakeProvider = StocktakeProvider();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MultiProvider(
+              providers: [
+                ChangeNotifierProvider<WarehouseProvider>.value(
+                  value: whProvider,
+                ),
+                ChangeNotifierProvider<StocktakeProvider>.value(
+                  value: stocktakeProvider,
+                ),
+              ],
+              child: const Directionality(
+                textDirection: TextDirection.rtl,
+                child: NewStocktakeScreen(preselectedWarehouseId: 1),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // التحقق من الحقول الأساسية
+        expect(find.text('جلسة جرد وتسوية مخزنية'), findsOneWidget);
+        expect(find.text('الرصيد الدفتري المسجل بالنظام حالياً'), findsOneWidget);
+        expect(find.text('1,200 كرتون'), findsWidgets);
+        expect(find.text('اعتماد الجرد وتسوية الرصيد'), findsOneWidget);
+
+        // تجربة إدخال رصيد مطابق تماماً (1200)
+        final actualField = find.byType(TextFormField).first;
+        await tester.enterText(actualField, '1200');
+        await tester.pump();
+
+        expect(find.text('الرصيد مطابق تماماً ✅'), findsOneWidget);
+
+        // تجربة إدخال رصيد به عجز (1150)
+        await tester.enterText(actualField, '1150');
+        await tester.pump();
+
+        expect(find.text('عجز في المخزن بمقدار: 50 كرتون ⚠️'), findsOneWidget);
+
+        // تجربة إدخال رصيد به زيادة (1230)
+        await tester.enterText(actualField, '1230');
+        await tester.pump();
+
+        expect(
+          find.text('فائض / زيادة غير مسجلة بمقدار: +30 كرتون ℹ️'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

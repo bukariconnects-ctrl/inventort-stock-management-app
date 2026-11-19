@@ -6,6 +6,7 @@ import 'core/constants/app_colors.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/main_screen.dart';
+import 'features/stocktake/providers/stocktake_provider.dart';
 import 'features/transactions/providers/transaction_provider.dart';
 import 'features/warehouses/providers/warehouse_provider.dart';
 
@@ -28,7 +29,7 @@ class RawaaWmsApp extends StatelessWidget {
           create: (_) => WarehouseProvider()..loadWarehousesWithStock(),
         ),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
-        ChangeNotifierProvider(create: (_) => TransactionProvider()),
+        ChangeNotifierProvider(create: (_) => StocktakeProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
@@ -258,26 +259,31 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'المرحلة 3: لوحة التحكم وإدارة المخازن',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'المرحلة 5: الجرد والتسوية المخزنية',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const Text(
                       'Offline First (SQLite)',

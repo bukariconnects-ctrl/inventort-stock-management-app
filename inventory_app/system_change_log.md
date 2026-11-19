@@ -4,93 +4,77 @@
 ---
 
 ### الحالة الحالية للنظام (Current Status)
-* **المرحلة المكتملة:** المرحلة 4 - سندات وعمليات المخزون (استلام، صرف، إتلاف) وربطها بالرصيد اللحظي (Phase 4: Stock Operations & Vouchers).
+* **المرحلة المكتملة:** المرحلة 5 - الجرد المخزني والتسويات الدورية ومطابقة الرصيد الفعلي (Phase 5: Stocktake & Reconciliation).
 * **حالة النظام:** مكتمل وجاهز 100% بدون أي أخطاء أو تحذيرات برمجية (`No issues found!`).
-* **الاختبارات الآلية:** اجتياز جميع اختبارات الوحدة واختبارات الواجهات بنجاح (`14 of 14 passed`).
-* **النمط التقني:** إطار عمل Flutter مع Material 3 و Provider لإدارة الحالة، ومعاملات ذرية في SQLite لمنع الأرصدة السالبة نهائياً (Offline-First).
+* **الاختبارات الآلية:** اجتياز جميع اختبارات قاعدة البيانات والواجهات بنجاح (`17 of 17 passed`).
+* **النمط التقني:** إطار عمل Flutter مع Material 3 و Provider لإدارة الحالة، ومعاملات ذرية في SQLite لضبط ومطابقة الأرصدة ومنع الأرصدة السالبة نهائياً (Offline-First).
 
 ---
 
-### 1. ملخص إنجازات المرحلة 4 (Phase 4 Highlights)
+### 1. ملخص إنجازات المرحلة 5 (Phase 5 Highlights)
 
-#### أ. مزود العمليات وحركات المخزون (TransactionProvider)
-* **`TransactionProvider`** ([lib/features/transactions/providers/transaction_provider.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/providers/transaction_provider.dart)):
-  * إدارة حالات التحميل `isLoading` ومعالجة الأخطاء `errorMessage` وتخزين آخر سند تم تنفيذه `lastSubmittedTransaction`.
-  * **`submitReceipt(...)`**: استدعاء `insertReceiptTransaction` لزيادة رصيد المخزن ذرياً وإشعار `WarehouseProvider` بإعادة قراءة وتحديث أرصدة لوحة التحكم فورياً.
-  * **`submitIssue(...)`**: استدعاء `insertIssueTransaction`، معالجة استثناء `InsufficientStockException` باللغة العربية، وخصم الرصيد وتحديث الواجهات فورياً عند النجاح.
-  * **`submitDamage(...)`**: استدعاء `insertDamageTransaction`، توثيق سبب التلف وخصم الكمية التالفة وتحديث الرصيد فورياً.
-  * **`getNextVoucherNumber(...)`**: جلب رقم السند التسلسلي التالي تلقائياً لعرضه في شاشات الإدخال (مثل `REC-202611-0001`، `ISS-202611-0001`، `DAM-202611-0001`).
+#### أ. مزود الجرد والتسويات المخزنية (StocktakeProvider)
+* **`StocktakeProvider`** ([lib/features/stocktake/providers/stocktake_provider.dart](file:///d:/inventory_management_app/inventory_app/lib/features/stocktake/providers/stocktake_provider.dart)):
+  * إدارة قائمة الجرد التاريخية `_stocktakeHistory`، ومؤشرات التحميل `isLoading` ورسائل الخطأ `errorMessage`.
+  * **`loadStocktakeHistory({int? warehouseId})`**: استرجاع جلسات الجرد السابقة من جدول `stocktakes` مرتبة من الأحدث إلى الأقدم.
+  * **`submitStocktakeReconciliation(...)`**: تنفيذ التسوية الذرية عبر `dbHelper.executeStocktakeReconciliation` لتعديل رصيد المخزن في جدول `warehouse_stocks` فورياً ليطابق الواقع الفعلي، وحفظ سجل التدقيق، ثم إشعار `WarehouseProvider` لإعادة قراءة الأرصدة وتحديث لوحة التحكم الرئيسية فورياً.
+  * **`getNextStocktakeCode()`**: توليد كود الجرد التسلسلي الشهري آلياً (`STK-YYYYMM-XXXX`).
+  * دعم دالة `setHistoryForTesting(...)` لتسهيل الاختبارات الآلية المعزولة.
 
 ---
 
-#### ب. شاشة تبويب العمليات وسندات المخزون (Operations Screen)
+#### ب. شاشة بدء جلسة جرد وتسوية جديدة (New Stocktake Screen)
+* **`NewStocktakeScreen`** ([lib/features/stocktake/screens/new_stocktake_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/stocktake/screens/new_stocktake_screen.dart)):
+  * **ترويسة السند:** عرض كود الجرد التسلسلي للقراءة فقط، وتاريخ اليوم، وبطاقة تعريف صنف مياه رواء الثابت.
+  * **اختيار المستودع:** قائمة منسدلة لاختيار المخزن المراد جرده مع جلب الرصيد الدفتري المسجل لحظياً.
+  * **بطاقة الرصيد الدفتري:** عرض بارز للرصيد المسجل حالياً بالنظام (مثلاً: `1,200 كرتون`).
+  * **إدخال الكمية الفعلية:** حقل عددي محصن يقبل الأرقام الصحيحة غير السالبة (`actualQuantity >= 0`).
+  * **البطاقة التفاعلية لاحتساب الفارق والمطابقة الفورية (Live Difference Card):**
+    * **مطابق تماماً (`diff == 0`):** بطاقة باللون الأخضر الزمردي "الرصيد مطابق تماماً ✅" وتأكيد عدم وجود عجز أو زيادة.
+    * **عجز مخزني (`diff < 0`):** بطاقة تحذيرية باللون الأحمر "عجز في المخزن بمقدار: X كرتون ⚠️" مع توضيح الكمية المفقودة.
+    * **فائض غير مسجل (`diff > 0`):** بطاقة باللون الأزرق المائي "فائض / زيادة غير مسجلة بمقدار: +X كرتون ℹ️".
+  * **حقل تبرير وسبب الفارق:** إلزامي عند وجود عجز أو فائض لضمان المساءلة الرقابية لأمين المخزن، واختياري عند التطابق التام.
+  * **حوار التأكيد الرقابي (`AlertDialog`):** نافذة تأكيد تفاعلية تراجع تفاصيل الجرد والفارق والرصيد الجديد قبل الاعتماد النهائي في قاعدة البيانات.
+
+---
+
+#### ج. شاشة أرشيف وسجل جلسات الجرد (Stocktake History Screen)
+* **`StocktakeHistoryScreen`** ([lib/features/stocktake/screens/stocktake_history_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/stocktake/screens/stocktake_history_screen.dart)):
+  * **الحالة الفارغة (Empty State):** رسالة توجيهية وأيقونة أنيقة مع زر مباشر "بدء جرد مخزني جديد".
+  * **قائمة الجلسات السابقة:** بطاقات أرشيفية متناسقة توضح:
+    * كود الجلسة واسم المستودع وكوده.
+    * شارة ملونة لنتيجة الجرد (مطابق، عجز، فائض) مع مقدار الفارق بالكرتون.
+    * مقارنة جانبية أنيقة بين "الرصيد الدفتري المسجل" و "الرصيد الفعلي المعتمد".
+    * سبب التسوية وتبرير الفارق وتاريخ ووقت الجرد بالتفصيل.
+  * زر عائم `FloatingActionButton` وزر بالأعلى للتحديث اليدوي الفوري `RefreshIndicator`.
+
+---
+
+#### د. ربط الجرد بشاشة تبويب العمليات (Operations Screen Integration)
 * **`OperationsScreen`** ([lib/features/transactions/screens/operations_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/operations_screen.dart)):
-  * واجهة عصرية تحتوي على بطاقات الدخول للعمليات الثلاث مع شارات الأثر المخزني:
-    1. **سند استلام توريد من المصنع:** شارة "زيادة رصيد (+)" باللون الأخضر الزمردي.
-    2. **سند صرف لموزع / مندوب:** شارة "خصم رصيد (-)" باللون الأزرق المائي.
-    3. **سند إتلاف وهدر مخزني:** شارة "خصم تالف (-)" باللون البرتقالي المحمر.
-  * تفعيل تبويب العمليات في شريط التنقل السفلي (`MainScreen`).
-  * ربط أزرار العمليات السريعة في `DashboardScreen` لتفتح هذه النماذج مباشرة.
+  * إضافة بطاقة القسم الرابع المخصصة: **"الجرد والتسوية الدورية"** باللون البنفسجي الوقور (`AppColors.stocktakePurple`).
+  * توفير زرين سريعين ومباشرين:
+    1. زر أساسي: **"بدء جرد جديد"** ينقل إلى `NewStocktakeScreen`.
+    2. زر تفصيلي: **"سجل الجرد السابق"** ينقل إلى `StocktakeHistoryScreen`.
 
 ---
 
-#### ج. شاشة سند استلام من المصنع (New Receipt Screen)
-* **`NewReceiptScreen`** ([lib/features/transactions/screens/new_receipt_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_receipt_screen.dart)):
-  * عرض رقم السند التسلسلي كـ Badge علوي للقراءة فقط.
-  * قائمة منسدلة لاختيار المستودع المستلم مع إيضاح الرصيد الحالي.
-  * حقل الصنف المخزني الافتراضي: "كرتون مياه رواء - 20 علبة × 75 مل".
-  * التحقق الصارم من الكمية المستلمة (رقم صحيح موجب > 0).
-  * إدخال اسم المسلّم من المصنع / السائق ورقم الشحنة/الوجبة والملاحظات.
-  * الانتقال التلقائي لشاشة تفاصيل السند فور نجاح الحفظ وزيادة الرصيد.
-
----
-
-#### د. شاشة سند صرف لموزع/مندوب مع الفحص الحي (New Issue Screen)
-* **`NewIssueScreen`** ([lib/features/transactions/screens/new_issue_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_issue_screen.dart)):
-  * عرض رقم سند الصرف التلقائي (`ISS-YYYYMM-XXXX`).
-  * **عرض حي للرصيد المتاح:** كرت تفاعلي تحت قائمة المخازن يوضح فورياً "الرصيد المتاح حالياً في هذا المخزن: X كرتون".
-  * **التحقق الحي (Live Validation):** عند إدخال كمية تتجاوز الرصيد المتوفر، يظهر تنبيه تحذيري فوري باللون الأحمر مع تعطيل زر الحفظ لمنع الخطأ البشري.
-  * حقول إلزامية لرقم أمر الصرف الإداري واسم الموزع/المندوب ورقم السيارة.
-  * حماية من النقر المزدوج وعرض مؤشر التحميل أثناء العملية الذرية.
-
----
-
-#### هـ. شاشة سند إتلاف وهدر مخزني (New Damage Screen)
-* **`NewDamageScreen`** ([lib/features/transactions/screens/new_damage_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/new_damage_screen.dart)):
-  * عرض رقم السند التلقائي (`DAM-YYYYMM-XXXX`) وفحص الرصيد المتوفر بالمخزن.
-  * قائمة منسدلة بأسباب الإتلاف المعتمدة: (كسر وتهشم عبوات - تسريب مياه من الكرتون - عيب تغليف ومصنعي - سوء تخزين ورطوبة - أخرى).
-  * توثيق اسم أمين المخزن أو المسؤول الموثّق للتلف وملاحظات الفحص.
-  * **نافذة تأكيد تحذيرية (`AlertDialog`):** قبل الخصم النهائي للتأكيد على مسؤولية أمين المخزن عن تقليص المخزون.
-
----
-
-#### و. شاشة عرض تفاصيل السند المنفذ (Voucher Details View)
-* **`VoucherDetailsScreen`** ([lib/features/transactions/screens/voucher_details_screen.dart](file:///d:/inventory_management_app/inventory_app/lib/features/transactions/screens/voucher_details_screen.dart)):
-  * عرض السند على هيئة فاتورة رسمية أنيقة توضح:
-    * نوع السند، رقمه، تاريخ ووقت الإدخال الفعلي.
-    * المستودع المعني، الصنف، والكمية بخط بارز ولون مخصص لنوع السند.
-    * بيانات المستلم/المسلّم ورقم المرجع أو سبب الإتلاف والملاحظات.
-    * شارة الاعتماد: "معتمد ومسجل محلياً في قاعدة البيانات ✅".
-    * زر لمعاينة وطباعة السند كملف PDF وزر للعودة للرئيسية.
-
----
-
-#### ز. تهيئة التطبيق ونقطة الانطلاق (App Entry Point)
+#### هـ. تهيئة التطبيق ومزودات الحالة (App MultiProvider)
 * **`lib/main.dart`**:
-  * تسجيل `TransactionProvider` داخل `MultiProvider` بجانب `WarehouseProvider`.
-  * ربط أزرار الإجراءات السريعة في `DashboardScreen` وتفعيل شاشة العمليات في `MainScreen`.
+  * تسجيل `StocktakeProvider` ضمن `MultiProvider` إلى جانب `WarehouseProvider` و `TransactionProvider`.
+  * تحديث نص تذييل شاشة البداية إلى المرحلة 5.
 
 ---
 
 ### 2. نتائج الفحص والتحقق الآلي (Verification & Tests)
 * **الفحص البرمجي (`flutter analyze`):**
   ```text
-  Analyzing inventory_app...
-  No issues found! (ran in 8.2s)
+  Analyzing inventory_management_app...
+  No issues found! (ran in 2.5s)
   ```
 * **فحص الاختبارات الآلية (`flutter test`):**
   ```text
-  00:05 +14: All tests passed!
+  00:02 +17: All tests passed!
     ✓ 1. التحقق من حقن البيانات الافتراضية (Initial Seed Data)
     ✓ 2. التحقق من سند الاستلام الذري (Atomic Receipt Transaction)
     ✓ 3. التحقق من سند الصرف الذري (Atomic Issue Transaction)
@@ -105,15 +89,17 @@
     ✓ 12. التحقق من شاشة التنقل الرئيسية (MainScreen)
     ✓ 13. التحقق من شاشة تبويب العمليات (OperationsScreen)
     ✓ 14. التحقق من شاشة عرض تفاصيل السند (VoucherDetailsScreen)
+    ✓ 15. التحقق من قسم الجرد والتسوية في شاشة العمليات (OperationsScreen)
+    ✓ 16. التحقق من شاشة أرشيف وسجل جلسات الجرد (StocktakeHistoryScreen) في الحالة الفارغة والمملوءة
+    ✓ 17. التحقق من شاشة إجراء جرد جديد وحساب الفوارق لحظياً (NewStocktakeScreen)
   ```
 
 ---
 
 ### 3. الجاهزية للمرحلة التالية (Next Stage Readiness)
-* **المرحلة 5 القادمة:** **الجرد المخزني والتسويات الدورية (Stocktake & Reconciliation UI & Logic)**.
-* **الخطوات القادمة:**
-  1. بناء مزود الجرد `StocktakeProvider`.
-  2. تصميم واجهة بدء جلسة جرد جديدة لمخزن معين مع جلب الرصيد الدفتري المسجل آلياً.
-  3. حقل إدخال الكمية الفعلية المحصورة يدوياً واحتساب الفارق (عجز أو فائض أو مطابق) لحظياً.
-  4. حقل توثيق سبب التسوية واعتماد الجرد لضبط الرصيد في SQLite ومطابقته للواقع الفعلي.
-  5. شاشة سجل وأرشيف جلسات الجرد والتسويات السابقة.
+* **المرحلة 6 القادمة:** **توليد وطباعة تقارير وسندات PDF ومشاركتها (PDF Generation & Printing)**.
+* **الخطوات المستهدفة:**
+  1. بناء خدمة توليد ملفات PDF باللغة العربية مع دعم الخطوط المناسبة وترتيب RTL.
+  2. تصميم قالب سند الصرف وسند الاستلام وسند الإتلاف كملف PDF رسمي جاهز للطباعة والمشاركة مع توقيعات أمين المخزن والمستلم.
+  3. تصميم تقرير جرد المخزن وجدول الفروقات كملف PDF دوري.
+  4. ربط زر "معاينة وطباعة السند كملف PDF" في شاشة تفاصيل السند بمكتبة الطباعة المباشرة.
